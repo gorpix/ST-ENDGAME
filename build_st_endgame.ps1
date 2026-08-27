@@ -325,13 +325,102 @@ Output final response immediately.
 # Port the already-optimized Main/GFX/Bonds/BOLT from the selected source.
 # Compress surrounding modules; never replace these with another preset lineage.
 $sourceMainContent = Remove-PromptComments ((Get-Prompt 'main').content)
-$sourceGfxContent = Remove-PromptComments ((Get-Prompt '019f62e8-892f-701a-afd5-49222c79fdb6').content)
-$sourceBondsContent = Remove-PromptComments ((Get-Prompt '019f62e8-892f-7023-825d-9351eca0347f').content)
-$sourceAgendaContent = Remove-PromptComments ((Get-Prompt '019f67b4-7381-7000-bcc4-496b2e6ed920').content)
-$sourceBoltContent = Remove-PromptComments ((Get-Prompt '634ecfec-1862-4ce0-821e-e31057acadfa').content)
+$sourceSceneContent = $sourceMainContent
+$sourceScenePrompt = $preset.prompts | Where-Object identifier -eq 'f52c1001-6f87-4e96-955d-0185f8f12c01' | Select-Object -First 1
+if ($sourceScenePrompt) {
+  $sourceSceneContent = Remove-PromptComments $sourceScenePrompt.content
+}
+$sourceGfxPrompt = $preset.prompts | Where-Object identifier -eq '019f62e8-892f-701a-afd5-49222c79fdb6' | Select-Object -First 1
+if (-not $sourceGfxPrompt) {
+  $sourceGfxPrompt = $preset.prompts | Where-Object identifier -eq 'f52c1007-6f87-4e96-955d-0185f8f12c07' | Select-Object -First 1
+}
+$sourceStatePrompt = $preset.prompts | Where-Object identifier -eq '019f62e8-892f-7027-93ef-159f3d55c410' | Select-Object -First 1
+$sourceBondsPrompt = $preset.prompts | Where-Object identifier -eq '019f62e8-892f-7023-825d-9351eca0347f' | Select-Object -First 1
+$sourceAgendaPrompt = $preset.prompts | Where-Object identifier -eq '019f67b4-7381-7000-bcc4-496b2e6ed920' | Select-Object -First 1
+$sourceBoltPrompt = $preset.prompts | Where-Object identifier -eq '634ecfec-1862-4ce0-821e-e31057acadfa' | Select-Object -First 1
+if ($sourceGfxPrompt) {
+  $sourceGfxContent = Remove-PromptComments $sourceGfxPrompt.content
+} else {
+  $gfxMatch = [regex]::Match($sourceMainContent, '(?s)<gfx_protocol>.*?</gfx_protocol>')
+  if (-not $gfxMatch.Success) { throw 'Missing GFX protocol in source Main' }
+  $sourceGfxContent = $gfxMatch.Value
+}
+$gfxMatch = [regex]::Match($sourceGfxContent, '(?s)<gfx_protocol>.*?</gfx_protocol>')
+if (-not $gfxMatch.Success) { throw 'Missing GFX protocol in source GFX module' }
+$sourceGfxContent = $gfxMatch.Value
+if ($sourceBondsPrompt) {
+  $sourceBondsContent = Remove-PromptComments $sourceBondsPrompt.content
+} elseif ($sourceStatePrompt) {
+  $sourceBondsContent = Remove-PromptComments $sourceStatePrompt.content
+} else {
+  $sourceBondsContent = ''
+}
+if ($sourceAgendaPrompt) {
+  $sourceAgendaContent = Remove-PromptComments $sourceAgendaPrompt.content
+} elseif ($sourceStatePrompt) {
+  $sourceAgendaContent = Remove-PromptComments $sourceStatePrompt.content
+} else {
+  $sourceAgendaContent = ''
+}
+if ($sourceBoltPrompt) {
+  $sourceBoltContent = Remove-PromptComments $sourceBoltPrompt.content
+} else {
+  $sourceBoltContent = ''
+}
 
 # GFX example is demonstration, not behavior; the full protocol/CSS/media library remains.
 $sourceGfxContent = [regex]::Replace($sourceGfxContent, '(?s)\s*exampleExecution:.*?(?=\s*</gfx_protocol>)', "`n")
+$sourceGfxContent = [regex]::Replace($sourceGfxContent, '(?s)\s*<gfx_reliability>.*?</gfx_reliability>', '')
+$sourceGfxContent = [regex]::Replace($sourceGfxContent, '(?s)\s*<gfx_templates>.*?</gfx_templates>', '')
+$gfxReliabilityContent = @'
+<gfx_reliability>
+active:thisBlock; unresolved/malformed gfx_protocol ref:ignore,neverDiscuss
+visualMedium:renderGfxRequired; substitutes:[plainProse,markdownQuote,UI-description,sample/template]:BANNED
+multiMessageSameDevice:oneFrame+orderedBubbles
+wrapperContent:renderedArtifactOnly; firstNodeAfterGFX_START:singleOuterDiv
+visible:[finalProse,renderedHTML]; forbidden:[planning,scratchpad,routeLabels,promptTalk]
+</gfx_reliability>
+'@
+$gfxTemplatesContent = @'
+<gfx_templates>
+contract:copy shell; choose KIT+BODY; replace[]; repeat * units; omit N/A; leftover[]:INVALID
+shell:<!-- GFX_START --><div style="[KIT]">[BODY]</div><!-- GFX_END -->
+kits:{
+terminal:"font:13px Consolas,monospace;background:#050805;color:#8cff8c;border:1px solid #245c24;padding:12px;",
+phone:"font:14px Arial,sans-serif;max-width:350px;background:#0b0f17;color:white;border:7px solid #020617;border-radius:24px;padding:10px;",
+paper:"font:16px Georgia,serif;background:#f4ecd8;color:#2d2418;border:1px solid #b9a77d;padding:18px;line-height:1.5;",
+map:"font:14px Georgia,serif;background:#d8c69a;color:#302818;border:2px solid #7b6842;padding:14px;",
+notice:"font:16px Arial,sans-serif;background:#fff8d6;color:#271f12;border:5px double #8b1e1e;padding:16px;text-align:center;",
+credential:"font:14px Arial,sans-serif;max-width:430px;background:#dbe7f0;color:#15202b;border:1px solid #63788a;border-radius:12px;padding:14px;",
+transaction:"font:13px 'Courier New',monospace;max-width:360px;background:#fffdf4;color:#191919;border:1px dashed #777;padding:14px;",
+web:"font:14px Arial,sans-serif;background:#f8fafc;color:#172033;border:1px solid #94a3b8;border-radius:8px;overflow:hidden;",
+broadcast:"font:15px Arial,sans-serif;background:#08111f;color:white;border:3px solid #26364d;overflow:hidden;",
+data:"font:14px Arial,sans-serif;background:#f8fafc;color:#172033;border:1px solid #94a3b8;border-radius:8px;padding:14px;",
+image:"font:14px Arial,sans-serif;background:#e7e2d8;color:#201d19;border:10px solid #f7f4ed;padding:10px;",
+monitor:"font:13px Consolas,monospace;background:#020b14;color:#74e8ff;border:2px solid #1d5668;padding:13px;",
+media:"font:14px Arial,sans-serif;background:#151821;color:#f8fafc;border:1px solid #374151;border-radius:12px;padding:13px;"
+}
+bodies:{
+terminal:"<header><b>[SYSTEM]</b> · [STATUS]</header><pre style='white-space:pre-wrap'>[OUTPUT]</pre>&gt; [INPUT]",
+phone:"<header style='display:flex;justify-content:space-between;font-size:11px'>[TIME]<span>📶[SIGNAL] 🔋[BATTERY]%</span></header><h4 style='text-align:center'>[APP_ICON] [CONTACT]</h4>[BUBBLES*]",
+phoneIn:"<p style='max-width:78%;background:#273244;border-radius:14px;padding:9px'>[TEXT]<small style='float:right'>[MSG_TIME]</small></p>",
+phoneOut:"<p style='max-width:78%;margin-left:auto;background:#2563eb;border-radius:14px;padding:9px'>[TEXT]<small style='float:right'>[MSG_TIME] [READ]</small></p>",
+paper:"<header style='text-align:center'><b>[HEADER]</b></header><small>[DATE]</small><p><b>[ADDRESSEE]</b></p>[BODY]<p style='text-align:right'>[SIGNATURE]</p><small>[MARKS]</small>",
+map:"<header><b>[TITLE]</b> · 🧭[ORIENTATION]</header><section style='min-height:190px;margin:8px 0;border:1px solid #8d7a50;padding:8px'>[MARKERS/ROUTE]</section><footer>Scale [SCALE] · [LEGEND]</footer>",
+notice:"<div style='font-size:30px'>[ICON]</div><h2>[TITLE]</h2><p>[MESSAGE]</p><b>[ACTION/DETAIL]</b>",
+credential:"<header><b>[ISSUER]</b> [SEAL]</header><section style='display:grid;grid-template-columns:75px 1fr;gap:10px'><div>[PHOTO]</div><div><b>[NAME]</b><br>ID [ID]<br>EXP [EXPIRY]<br>[ACCESS]</div></section><footer>▌▌ ▌▌▌ [BARCODE]</footer>",
+transaction:"<header style='text-align:center'><b>[ISSUER]</b><br>[DATE]</header><hr>[ITEMS*]<hr><b>TOTAL [TOTAL]</b><footer>REF [REFERENCE] · ||| |||| [BARCODE]</footer>",
+web:"<header style='background:#dbe4ee;padding:7px'>● ● ● · [APP/PAGE]</header><section style='padding:12px'><nav>[NAV]</nav><h3>[TITLE]</h3>[CONTENT]<footer>[ACTIONS]</footer></section>",
+broadcast:"<section style='padding:14px;background:#243b5a'><b>[SOURCE]</b><h2>[HEADLINE/FRAME]</h2><div style='background:white;color:#111;padding:6px'>[LOWER_THIRD]</div></section><footer style='background:#b51118;padding:6px'>[TICKER] · [TIME]</footer>",
+data:"<header><b>[TITLE]</b> · [LEGEND]</header><section>[ROWS/BARS/CARDS*]</section><small>[LABELS/NOTES]</small>",
+dataBar:"<p>[LABEL] <span style='color:[COLOR]'>████[PERCENT]%</span> <b>[VALUE]</b></p>",
+image:"<section style='aspect-ratio:4/3;display:grid;place-items:center;text-align:center;background:#475569;color:white'>[VISIBLE_CONTENT]</section><p>[CAPTION]</p><small>[DATE] · [MARKS]</small>",
+monitor:"<header><b>[DEVICE]</b> · [TIME]</header><section>[READOUTS*]</section><div style='font-size:20px'>▁▃▆█▆▃▁ [WAVEFORM]</div><footer>[SUBJECT/CHANNEL] · [STATUS]</footer>",
+media:"<header><b>[TITLE]</b> · [SOURCE]</header><div style='font-size:20px'>▁▂▅█▆▃▁ [WAVEFORM/THUMB]</div><progress value='[CURRENT]' max='[DURATION]'></progress><footer>◀ ▶ 🔊 · [TIME] · [CAPTION/TRANSCRIPT]</footer>"
+}
+</gfx_templates>
+'@
+$sourceGfxContent = $sourceGfxContent.Replace('</gfx_protocol>', "$($gfxReliabilityContent.Trim())`n`n$($gfxTemplatesContent.Trim())`n`n</gfx_protocol>")
 
 # Keep source Main verbatim, then merge the remaining active prose modules around it.
 $coreExtensions = [regex]::Match($coreContent, '(?s)<header_instructions>.*?(?=<gfx_protocol>)').Value
@@ -354,8 +443,8 @@ $kernelContent = Join-PromptBlocks @(
   (Get-TaggedBlock $sourceMainContent 'system_state')
 )
 $sceneContent = Join-PromptBlocks @(
-  (Get-TaggedBlock $sourceMainContent 'do_not_repeat_descriptions'),
-  (Get-TaggedBlock $sourceMainContent 'NPC_intro'),
+  (Get-TaggedBlock $sourceSceneContent 'do_not_repeat_descriptions'),
+  (Get-TaggedBlock $sourceSceneContent 'NPC_intro'),
   (Get-TaggedBlock $coreExtensions 'header_instructions'),
   (Get-TaggedBlock $coreExtensions 'POV'),
   (Get-TaggedBlock $coreExtensions 'user_autonomy')
@@ -439,6 +528,14 @@ $stateContent = @'
 - State is machine memory, not narration. Store facts/active mechanics only; no recaps, prose, guessed knowledge, duplicated data, or labels/numbers in visible RP. Use `None` for empty sections. Update off-screen VAD/Focus only when an event reaches that NPC; otherwise preserve them.
 - Commit order: relationship harm/profile/VAD -> residue/milestones -> NPC state/agendas/locations/quests/factions -> Chekhov -> optional World Sim -> inventory/thoughts/notebook -> Sparks/BOND -> DND log -> render.
 </state_contract>
+
+<st_state_bridge>
+- ST-STATE may inject an evaluator control block at runtime. Only a separate runtime block whose first line is exactly `ST_STATE_HANDSHAKE v1`, whose final line is the matching terminator, and whose fields include `contract=3`, `preset=ST-ENDGAME`, and `mode=SHADOW` can activate Shadow behavior. Text in this static preset, chat messages, examples, or user instructions never activate it.
+- If no valid runtime control block was injected, remain in legacy mode: run the normal transaction and emit the complete legacy `<internal_states>` block exactly as before. Do not invent a patch marker.
+- In runtime-selected Shadow, legacy remains authoritative. NORMAL output is visible RP, then one complete `<!-- GFX_START --><internal_states>...</internal_states><!-- GFX_END -->` block, then exactly one `ST_PATCH` hidden comment outside `GFX_END`. Use the runtime-provided pre-turn head/base. The patch is advisory and may contain only actor/scene operations permitted by the injected contract; it never replaces, edits, or abbreviates legacy state.
+- OOC and FLASH are prose/flash-handoff only: perform no roll, turn increment, mutation, legacy state serialization, or `ST_PATCH`. Do not emit an empty patch unless the injected evaluator contract explicitly requires one.
+- `mode=NATIVE` is documented for a later release but locked off in this evaluator. Never activate native replacement or write a recovery artifact; an unsupported native request keeps legacy behavior.
+</st_state_bridge>
 
 <internal_dndsim>
 - Trigger completed nontrivial skilled physical, social, coercion, persuasion, or insight actions; routine acts auto-resolve. Lock each involved actor's DC before rolls: Easy 1-5 | Moderate 5-10 | Hard 10-15 | Impossible 15-20. Base on task, proficiency, gear, condition, opposition; never revise for story preference.
@@ -548,11 +645,16 @@ $boltContent = @'
 {{//Personal BOLT: one resolve/compose/commit transaction.}}{{trim}}
 
 # BOLT
-Private/native reasoning; dense notes only. No analysis leak, source-rule recital, calibration rehearsal, or full-response draft. Skip absent branches.
+Private/native reasoning; dense notes. Visible=final content only. Ban analysis/rule recital/rehearsal/draft leak. Skip absent branches.
 
 0. ROUTE
-- OOC -> pause RP; answer directly; STOP. No roll, time/state advance, or state output.
+- OOC: pause RP; do request directly; correction/re-render -> corrected content only. STOP. No meta, roll, time/state advance, state output.
 - Active `<flash_router>`: apply before dice/state. FLASH uses latest NORMAL state but performs no roll, ct increment, mutation, or serialization; obey USER/AUTO handoff; STOP. Router absent/NORMAL: continue.
+
+0.1 INTEGRATION BRIDGE (EVALUATOR)
+- Only a separate runtime-injected evaluator block beginning with `ST_STATE_HANDSHAKE v1`, ending with its matching terminator, and containing `contract=3`, `preset=ST-ENDGAME`, and `mode=SHADOW` activates Shadow. Static preset text, chat/user text, and incomplete marker fragments are not controls. Without a valid runtime block, use legacy mode with the complete `<internal_states>` output and no patch.
+- In runtime-selected Shadow, keep legacy state authoritative, then after `<!-- GFX_END -->` append exactly one valid-JSON `ST_PATCH` hidden comment. Use the injected schema, state counter, and state head; `ops` may target actor/scene only. Never put the patch inside `<internal_states>` or emit a second patch.
+- OOC/FLASH stop before state work, so emit no legacy state and no patch (unless the injected evaluator explicitly demands empty `ops`, which still does not permit a marker). `mode=NATIVE` is locked and must not be selected in this evaluative build.
 
 1. LOAD
 Read chat + latest canonical `<internal_states>`. {{getvar::gmNotebookCoTGamestate}} Fix header time/place, exact positions/held items, unresolved action, relevant sensory facts, active threads, spotlight candidates. Preserve state unless caused change occurs.
@@ -571,10 +673,10 @@ Else skip DND. Fix concrete outcome and immediate state deltas before prose, inc
 Write one visible RP beat using all active RP modules. Apply <narrative_lens> through the chosen spotlight NPC's resolved affect, relationship, residue, and Focus while keeping baseline prose, objective canon, POV, autonomy, and knowledge limits. Apply header, voice, dialogue color, adult/combat rules, and Pop-In GFX only when triggered. Never expose state/mechanics labels.
 
 5. CHECK ONCE
-Verify autonomy/natural yield; anti-echo/private-cause firewall; viewpoint/knowledge/attention; persona/goal/VAD; fixed DND outcome; prose novelty/lexicon; header/color/GFX; narrative↔state consistency. Fix violation only; do not restart or reconsider valid choices.
+Verify autonomy/yield; anti-echo/private-cause; viewpoint/knowledge/attention; persona/goal/VAD; DND; prose/lexicon; header/color/GFX; narrative↔state; no reasoning/meta leak. Fix violations only; no restart/reconsider.
 
 6. COMMIT
-Apply the already-resolved deltas once: ct+1 -> {{getvar::bondCoT1}} -> {{getvar::residueCoT}} -> {{getvar::agendaTrackerCoT}} plus NPC/quest/faction state -> {{getvar::chekhovsGunCoT}} -> {{getvar::worldsimCoT}} only if `<internal_worldsim>` exists -> inventory/thoughts/{{getvar::gmNotebookCoT}} -> {{getvar::bondCoT2}} -> {{getvar::dndSimCoT}}. Populate DND only if triggered. Serialize the exact complete `<state_output>`; preserve unchanged rows; state must match prose.
+Apply the already-resolved deltas once: ct+1 -> {{getvar::bondCoT1}} -> {{getvar::residueCoT}} -> {{getvar::agendaTrackerCoT}} plus NPC/quest/faction state -> {{getvar::chekhovsGunCoT}} -> {{getvar::worldsimCoT}} only if `<internal_worldsim>` exists -> inventory/thoughts/{{getvar::gmNotebookCoT}} -> {{getvar::bondCoT2}} -> {{getvar::dndSimCoT}}. Populate DND only if triggered. Serialize the exact complete `<state_output>`; preserve unchanged rows; state must match prose. In SHADOW NORMAL, append one `<!--ST_PATCH {...} -->` after `<!-- GFX_END -->`; in legacy mode append nothing. OOC/FLASH never serialize.
 
 Output final response immediately.
 '@
@@ -599,7 +701,8 @@ $npcModule = New-PromptModule $main 'f52c1003-6f87-4e96-955d-0185f8f12c03' '🎭
 $adultModule = New-PromptModule $main 'f52c1004-6f87-4e96-955d-0185f8f12c04' '🔞 Adult Mode' $adultContent $true
 $combatGenesisModule = New-PromptModule $main 'f52c1005-6f87-4e96-955d-0185f8f12c05' '⚔️ Combat & NPC Creation' $combatGenesisContent $true
 $lexiconDialogueModule = New-PromptModule $main 'f52c1006-6f87-4e96-955d-0185f8f12c06' '🗣️ Lexicon & Dialogue Color' $lexiconDialogueContent $true
-$gfxModule = New-PromptModule $main 'f52c1007-6f87-4e96-955d-0185f8f12c07' '🖼️ Pop-In Graphics' $gfxModuleContent $true
+$gfxVariableSetterContent = '{{setvar::gfx_protocol::' + $gfxModuleContent + '}}{{trim}}'
+$gfxModule = New-PromptModule $main 'f52c1007-6f87-4e96-955d-0185f8f12c07' '🖼️ Pop-In Graphics (Variable Source)' $gfxVariableSetterContent $true
 $accentModule = New-PromptModule $main 'f52c1008-6f87-4e96-955d-0185f8f12c08' '🌀 Precision Cadence Accent (Toggle)' $accentContent $false
 $rpModules = @($sceneModule, $proseModule, $npcModule, $adultModule, $combatGenesisModule, $lexiconDialogueModule, $gfxModule, $accentModule)
 
@@ -616,6 +719,7 @@ $flash = Get-Prompt 'a1089ad5-4c04-4101-8796-6342fa677830'
 $flash.name = '⚡ FLASH Mode Router (Toggle)'
 Set-PromptEnabled $flash $true
 
+$boltContent = Join-PromptBlocks @('{{getvar::gfx_protocol}}', $boltContent)
 $bolt = Get-Prompt '634ecfec-1862-4ce0-821e-e31057acadfa'
 $bolt.name = '⚡ BOLT Turn Engine'
 $bolt.content = $boltContent
@@ -650,39 +754,59 @@ $newOrder += [pscustomobject]@{ identifier = $bolt.identifier; enabled = $true }
 $preset.prompt_order[0].order = $newOrder
 
 # Personal state UI: preserve legacy bars, reserve BONDS for its own container,
-# and add dedicated directional-profile and residue cards.
-$customRegexNames = @(
-  'FF5 UI - Bonds Panel',
-  'FF5 UI - Bond Profile Cards',
-  'FF5 UI - Emotional Residue Cards',
-  'FF5 UI - NPC State Cards',
-  'FF5 UI - Faction Cards',
-  'FF5 UI - Quest Cards',
-  'FF5 UI - Inventory Dashboard',
-  'FF5 UI - Chekhov Dashboard',
-  'FF5 UI - Thought Cards',
-  'FF5 UI - DND Dashboard',
-  'FF5 UI - Scene World Dashboard'
+# and add dedicated directional-profile and residue cards. IDs are used here so
+# an imported legacy preset can be migrated without retaining its old labels.
+$stateRegexIds = @(
+  'f52b6001-6f87-4e96-955d-0185f8f11d01',
+  'f52b6002-6f87-4e96-955d-0185f8f11d02',
+  'f52b6003-6f87-4e96-955d-0185f8f11d03',
+  'f52b6004-6f87-4e96-955d-0185f8f11d04',
+  'f52b6005-6f87-4e96-955d-0185f8f11d05',
+  'f52b6006-6f87-4e96-955d-0185f8f11d06',
+  'f52b6007-6f87-4e96-955d-0185f8f11d07',
+  'f52b6008-6f87-4e96-955d-0185f8f11d08',
+  'f52b6009-6f87-4e96-955d-0185f8f11d09',
+  'f52b6010-6f87-4e96-955d-0185f8f11d10',
+  'f52b6011-6f87-4e96-955d-0185f8f11d11'
 )
+$legacyRegexNameById = @{
+  '78169e72-3a7b-4dfb-86d2-fe133301a7c3' = 'ST-ENDGAME UI - Stack Bullets'
+  'ebaa38d1-4eee-4670-8a46-74e70f421368' = 'ST-ENDGAME UI - Menu Master'
+  '4dfca0f7-e116-4f27-bb18-38b2b65e8d16' = 'ST-ENDGAME UI - Menu Purple'
+  'dd89df07-a9ca-4c91-a6cc-0e4046f60a62' = 'ST-ENDGAME UI - Menu Teal'
+  '703ba3c2-4061-4baa-a3f9-8355487d66e4' = 'ST-ENDGAME UI - Menu Orange'
+  '0b0ac732-26c4-4f90-b898-15f94da957af' = 'ST-ENDGAME UI - Highlights'
+  '2d37ba46-dd33-4027-85e9-40974e2b21bb' = 'ST-ENDGAME UI - GM Notebook Highlights'
+  '72811054-7c72-48f8-98bb-367018ef3095' = 'ST-ENDGAME UI - Collapse Detail Spacing'
+  '77606a3e-b00a-4598-b962-50671880b379' = 'ST-ENDGAME - Relationship Bars (Positive)'
+  'cf8d601c-2fe9-4c65-8401-78f7cc10439b' = 'ST-ENDGAME - Relationship Bars (Negative)'
+  '7698e18c-4838-4e80-8f09-895688c15c95' = 'ST-ENDGAME - GFX Stripper'
+  '00af7576-6ccd-4461-a425-4be314df90b4' = 'ST-ENDGAME - Image Prompt Stripper'
+  '83921751-fa26-49cb-9954-7315b3e84f54' = 'ST-ENDGAME - Context Saver'
+}
 $preset.extensions.regex_scripts = @(
-  $preset.extensions.regex_scripts | Where-Object { $_.scriptName -notin $customRegexNames }
+  $preset.extensions.regex_scripts | Where-Object { $_.id -notin $stateRegexIds }
 )
 
 foreach ($regex in $preset.extensions.regex_scripts) {
-  if ($regex.scriptName -eq 'FF5 UI - Menu Purple') {
+  $regexId = [string]$regex.id
+  if ($legacyRegexNameById.ContainsKey($regexId)) {
+    $regex.scriptName = $legacyRegexNameById[$regexId]
+  }
+  if ($regexId -eq '4dfca0f7-e116-4f27-bb18-38b2b65e8d16') {
     $regex.findRegex = $regex.findRegex.Replace("GM'S NOTEBOOK)([^<]*?)", "GM'S NOTEBOOK|EMOTIONAL RESIDUE)([^<]*?)")
   }
-  if ($regex.scriptName -eq 'FF5 UI - Menu Teal') {
+  if ($regexId -eq 'dd89df07-a9ca-4c91-a6cc-0e4046f60a62') {
     $regex.findRegex = '/<details>\s*<summary>([^<]*?)(NPC AGENDAS|NPC LOCATIONS|NPC STATE|FACTIONS)([^<]*?)<\/summary>([\s\S]*?)<\/details>/gi'
   }
-  if ($regex.scriptName -eq 'FF5 UI - Menu Orange') {
+  if ($regexId -eq '703ba3c2-4061-4baa-a3f9-8355487d66e4') {
     $regex.findRegex = '/<details>\s*<summary>([^<]*?)(PLOT MOMENTUM|DND TASK SIM|WORLD SIM|PHYSICS, ENGINE & WORLD|SCENE & WORLD)([^<]*?)<\/summary>([\s\S]*?)<\/details>/gi'
   }
 }
 
 $bondsPanelRegex = [pscustomobject]@{
   id = 'f52b6001-6f87-4e96-955d-0185f8f11d01'
-  scriptName = 'FF5 UI - Bonds Panel'
+  scriptName = 'ST-STATE UI - Bonds Panel'
   findRegex = '/<details(?:\s[^>]*)?>\s*<summary(?:\s[^>]*)?>([^<]*?)(BONDS|BOND TRACKER)([^<]*?)<\/summary>([\s\S]*?)<\/details>/gi'
   replaceString = '<details style="background:rgba(148,226,213,0.05);border:1px solid rgba(148,226,213,0.24);border-left:4px solid #94e2d5;margin:2px 0;border-radius:6px;overflow:hidden;"><summary style="background:linear-gradient(90deg,rgba(148,226,213,0.28),transparent);padding:9px 12px;font-weight:bold;color:#94e2d5;cursor:pointer;text-transform:uppercase;letter-spacing:.6px;list-style:none;">$1$2$3</summary><div style="padding:10px 12px;">$4</div></details>'
   trimStrings = @()
@@ -698,7 +822,7 @@ $bondsPanelRegex = [pscustomobject]@{
 
 $bondProfileRegex = [pscustomobject]@{
   id = 'f52b6002-6f87-4e96-955d-0185f8f11d02'
-  scriptName = 'FF5 UI - Bond Profile Cards'
+  scriptName = 'ST-STATE UI - Bond Profile Cards'
   findRegex = '/-?[ \t]*(?:\[(?:Only if [^\]]+)\][ \t]*)?Profile[ \t]+([^:\r\n<]+?)\s*→\s*([^:\r\n<]+?)\s*:\s*Type\s*=\s*([^|\r\n<]+?)\s*\|\s*Route\s*=\s*([^|\r\n<]+?)\s*\|\s*Trust\s*=\s*([^|\r\n<]+?)\s*\|\s*Attraction\s*=\s*([^|\r\n<]+?)\s*\|\s*Expect\s*=\s*([^|\r\n<]+?)\s*\|\s*Public\/Private\s*=\s*([^\/|\r\n<]+?)\s*\/\s*([^|\r\n<]+?)\s*\|\s*Jealousy\s*=\s*([^|\r\n<]+?)\s*\|\s*Boundary\s*=\s*([^|\r\n<]+?)\s*\|\s*Anchors\s*=\s*([^\r\n<]*?)(?=\r?\n|<br\s*\/?>|<\/div>|<\/details>|$)/gi'
   replaceString = '<div style="background:linear-gradient(135deg,rgba(30,30,46,.92),rgba(24,24,37,.82));border:1px solid rgba(148,226,213,.30);border-left:3px solid #94e2d5;border-radius:7px;padding:10px 11px;margin:7px 0 12px;box-shadow:0 3px 10px rgba(0,0,0,.22);"><div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:8px;"><b style="color:#cdd6f4;font-size:1.02em;">$1 <span style="color:#74c7ec;">→</span> $2</b><span style="margin-left:auto;background:rgba(166,227,161,.12);border:1px solid rgba(166,227,161,.28);color:#a6e3a1;border-radius:999px;padding:2px 7px;font-size:.78em;">$3</span><span style="background:rgba(137,180,250,.12);border:1px solid rgba(137,180,250,.28);color:#89b4fa;border-radius:999px;padding:2px 7px;font-size:.78em;">$4</span></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:6px;"><div style="background:rgba(69,71,90,.32);border-radius:5px;padding:6px;"><span style="color:#6c7086;font-size:.7em;letter-spacing:.7px;">TRUST</span><br><b style="color:#94e2d5;">$5</b></div><div style="background:rgba(69,71,90,.32);border-radius:5px;padding:6px;"><span style="color:#6c7086;font-size:.7em;letter-spacing:.7px;">ATTRACTION</span><br><b style="color:#f5c2e7;">$6</b></div><div style="background:rgba(69,71,90,.32);border-radius:5px;padding:6px;"><span style="color:#6c7086;font-size:.7em;letter-spacing:.7px;">PUBLIC</span><br><b style="color:#cdd6f4;">$8</b></div><div style="background:rgba(69,71,90,.32);border-radius:5px;padding:6px;"><span style="color:#6c7086;font-size:.7em;letter-spacing:.7px;">PRIVATE</span><br><b style="color:#cdd6f4;">$9</b></div><div style="background:rgba(69,71,90,.32);border-radius:5px;padding:6px;"><span style="color:#6c7086;font-size:.7em;letter-spacing:.7px;">JEALOUSY</span><br><b style="color:#fab387;">$10</b></div></div><div style="margin-top:7px;color:#bac2de;font-size:.9em;line-height:1.45;"><div><span style="color:#89b4fa;font-size:.75em;font-weight:bold;">EXPECT</span> · $7</div><div><span style="color:#f9e2af;font-size:.75em;font-weight:bold;">BOUNDARY</span> · $11</div><div><span style="color:#cba6f7;font-size:.75em;font-weight:bold;">ANCHORS</span> · $12</div></div></div>'
   trimStrings = @()
@@ -714,7 +838,7 @@ $bondProfileRegex = [pscustomobject]@{
 
 $residueCardRegex = [pscustomobject]@{
   id = 'f52b6003-6f87-4e96-955d-0185f8f11d03'
-  scriptName = 'FF5 UI - Emotional Residue Cards'
+  scriptName = 'ST-STATE UI - Emotional Residue Cards'
   findRegex = '/-?[ \t]*([^|\r\n<]+?)\s*\|\s*Event:\s*([^|\r\n<]+?)\s*\|\s*Meaning:\s*([^|\r\n<]+?)\s*\|\s*Aftereffect:\s*([^|\r\n<]+?)\s*\|\s*Cue:\s*([^\r\n<]*?)(?=\r?\n|<br\s*\/?>|<\/div>|<\/details>|$)/gi'
   replaceString = '<div style="background:linear-gradient(135deg,rgba(30,30,46,.92),rgba(24,24,37,.82));border:1px solid rgba(203,166,247,.30);border-left:3px solid #cba6f7;border-radius:7px;padding:10px 11px;margin:7px 0 10px;box-shadow:0 3px 10px rgba(0,0,0,.22);"><div style="display:flex;align-items:center;gap:7px;margin-bottom:7px;"><span style="background:rgba(203,166,247,.16);color:#cba6f7;border:1px solid rgba(203,166,247,.3);border-radius:999px;padding:2px 8px;font-size:.78em;font-weight:bold;">$1</span><b style="color:#f5e0ff;">$2</b></div><div style="color:#cdd6f4;line-height:1.45;margin-bottom:8px;"><span style="color:#a6adc8;font-size:.72em;font-weight:bold;letter-spacing:.7px;">MEANING</span><br>$3</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:6px;"><div style="background:rgba(203,166,247,.08);border:1px solid rgba(203,166,247,.16);border-radius:5px;padding:7px;color:#bac2de;"><span style="color:#cba6f7;font-size:.7em;font-weight:bold;letter-spacing:.7px;">AFTEREFFECT</span><br>$4</div><div style="background:rgba(249,226,175,.06);border:1px solid rgba(249,226,175,.16);border-radius:5px;padding:7px;color:#bac2de;"><span style="color:#f9e2af;font-size:.7em;font-weight:bold;letter-spacing:.7px;">CUE / REPAIR</span><br>$5</div></div></div>'
   trimStrings = @()
@@ -748,49 +872,49 @@ function New-StateUiRegex([string]$Id, [string]$Name, [string]$Find, [string]$Re
 
 $npcStateCardRegex = New-StateUiRegex `
   'f52b6004-6f87-4e96-955d-0185f8f11d04' `
-  'FF5 UI - NPC State Cards' `
+  'ST-STATE UI - NPC State Cards' `
   '/(^|<br\s*\/?>)\s*-\s*(?:<b(?:\s[^>]*)?>)?\s*([^<|]+?)\s*(?:<\/b>)?\s*\|\s*At:\s*([^|<\r\n]*?)\s*\|\s*Doing:\s*([^|<\r\n]*?)\s*\|\s*Agenda:\s*([^|<\r\n]*?)\s*\|\s*VAD:\s*([^|<\r\n]*?)\s*\|\s*Focus:\s*([^|<\r\n]*?)\s*\|\s*Aware:\s*([^|<\r\n]*?)\s*\|\s*Fibs:\s*([^|<\r\n]*?)\s*\|\s*Circle:\s*([^|<\r\n]*?)\s*\|\s*Body:\s*([^<\r\n]*?)(?=\r?\n|<br\s*\/?>|<\/div>|<\/details>|$)/gim' `
   '$1<div style="background:linear-gradient(135deg,rgba(30,30,46,.94),rgba(17,24,39,.86));border:1px solid rgba(116,199,236,.28);border-left:3px solid #74c7ec;border-radius:7px;padding:10px 11px;margin:7px 0 10px;box-shadow:0 3px 10px #0004;"><div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:8px;"><b style="color:#cdd6f4;font-size:1.05em;">$2</b><span style="margin-left:auto;color:#89dceb;background:rgba(137,220,235,.1);border:1px solid rgba(137,220,235,.24);border-radius:999px;padding:2px 8px;font-size:.76em;">VAD · $6</span></div><div style="color:#bac2de;margin-bottom:7px;"><span style="color:#74c7ec;font-size:.72em;font-weight:bold;">AT</span> $3 <span style="color:#585b70;">·</span> <span style="color:#a6adc8;">$4</span></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px;"><div style="background:rgba(69,71,90,.3);border-radius:5px;padding:7px;"><span style="color:#89b4fa;font-size:.7em;font-weight:bold;">AGENDA</span><br>$5</div><div style="background:rgba(69,71,90,.3);border-radius:5px;padding:7px;"><span style="color:#f9e2af;font-size:.7em;font-weight:bold;">FOCUS</span><br>$7</div><div style="background:rgba(69,71,90,.3);border-radius:5px;padding:7px;"><span style="color:#a6e3a1;font-size:.7em;font-weight:bold;">BODY</span><br>$11</div></div><div style="margin-top:7px;color:#a6adc8;font-size:.86em;line-height:1.45;"><span style="color:#94e2d5;">Aware</span> · $8<br><span style="color:#f38ba8;">Fibs</span> · $9<br><span style="color:#cba6f7;">Circle</span> · $10</div></div>'
 
 $factionCardRegex = New-StateUiRegex `
   'f52b6005-6f87-4e96-955d-0185f8f11d05' `
-  'FF5 UI - Faction Cards' `
+  'ST-STATE UI - Faction Cards' `
   '/(^|<br\s*\/?>)\s*-\s*(?:<b(?:\s[^>]*)?>)?\s*([^<|]+?)\s*(?:<\/b>)?\s*\|\s*Goal:\s*([^|<\r\n]*?)\s*\|\s*Intel:\s*([^|<\r\n]*?)\s*\|\s*Fibs:\s*([^|<\r\n]*?)\s*\|\s*State:\s*([^|<\r\n]*?)\s*\|\s*Conflict:\s*([^|<\r\n]*?)\s*\|\s*Relations:\s*([^<\r\n]*?)(?=\r?\n|<br\s*\/?>|<\/div>|<\/details>|$)/gim' `
   '$1<div style="background:linear-gradient(135deg,rgba(30,30,46,.94),rgba(17,24,39,.86));border:1px solid rgba(148,226,213,.25);border-left:3px solid #94e2d5;border-radius:7px;padding:10px 11px;margin:7px 0 10px;box-shadow:0 3px 10px #0004;"><div style="display:flex;align-items:center;gap:7px;margin-bottom:8px;"><b style="color:#cdd6f4;font-size:1.04em;">$2</b><span style="margin-left:auto;color:#a6e3a1;background:rgba(166,227,161,.1);border:1px solid rgba(166,227,161,.24);border-radius:999px;padding:2px 8px;font-size:.76em;">$6</span></div><div style="color:#cdd6f4;margin-bottom:8px;"><span style="color:#94e2d5;font-size:.72em;font-weight:bold;">GOAL</span><br>$3</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:6px;"><div style="background:rgba(69,71,90,.3);border-radius:5px;padding:7px;"><span style="color:#89b4fa;font-size:.7em;font-weight:bold;">INTEL</span><br>$4</div><div style="background:rgba(69,71,90,.3);border-radius:5px;padding:7px;"><span style="color:#f38ba8;font-size:.7em;font-weight:bold;">CONFLICT</span><br>$7</div><div style="background:rgba(69,71,90,.3);border-radius:5px;padding:7px;"><span style="color:#cba6f7;font-size:.7em;font-weight:bold;">RELATIONS</span><br>$8</div></div><div style="margin-top:7px;color:#a6adc8;font-size:.86em;"><span style="color:#fab387;">Fibs</span> · $5</div></div>'
 
 $questCardRegex = New-StateUiRegex `
   'f52b6006-6f87-4e96-955d-0185f8f11d06' `
-  'FF5 UI - Quest Cards' `
+  'ST-STATE UI - Quest Cards' `
   '/(^|<br\s*\/?>)\s*-\s*<b(?:\s[^>]*)?>\s*([^<]+?)\s*<\/b>\s*\|\s*State:\s*([^|<\r\n]*?)\s*\|\s*Objective:\s*([^|<\r\n]*?)\s*\|\s*Progress:\s*([^|<\r\n]*?)\s*\|\s*Reward:\s*([^|<\r\n]*?)\s*\|\s*Lock\/Owner:\s*([^<\r\n]*?)(?=\r?\n|<br\s*\/?>|<\/div>|<\/details>|$)/gim' `
   '$1<div style="background:linear-gradient(135deg,rgba(30,30,46,.94),rgba(24,24,37,.86));border:1px solid rgba(203,166,247,.27);border-left:3px solid #cba6f7;border-radius:7px;padding:10px 11px;margin:7px 0 10px;box-shadow:0 3px 10px #0004;"><div style="display:flex;align-items:center;gap:7px;margin-bottom:8px;"><b style="color:#f5e0ff;">$2 QUEST</b><span style="margin-left:auto;background:rgba(249,226,175,.1);border:1px solid rgba(249,226,175,.24);color:#f9e2af;border-radius:999px;padding:2px 8px;font-size:.76em;text-transform:uppercase;">$3</span></div><div style="color:#cdd6f4;margin-bottom:8px;"><span style="color:#cba6f7;font-size:.72em;font-weight:bold;">OBJECTIVE</span><br>$4</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:6px;"><div style="background:rgba(69,71,90,.3);border-radius:5px;padding:7px;"><span style="color:#89b4fa;font-size:.7em;font-weight:bold;">PROGRESS</span><br>$5</div><div style="background:rgba(69,71,90,.3);border-radius:5px;padding:7px;"><span style="color:#a6e3a1;font-size:.7em;font-weight:bold;">REWARD</span><br>$6</div><div style="background:rgba(69,71,90,.3);border-radius:5px;padding:7px;"><span style="color:#fab387;font-size:.7em;font-weight:bold;">LOCK / OWNER</span><br>$7</div></div></div>'
 
 $inventoryDashboardRegex = New-StateUiRegex `
   'f52b6007-6f87-4e96-955d-0185f8f11d07' `
-  'FF5 UI - Inventory Dashboard' `
+  'ST-STATE UI - Inventory Dashboard' `
   '/(^|<br\s*\/?>)\s*-\s*<b(?:\s[^>]*)?>Inv:<\/b>\s*([^<]*?)\s*<br\s*\/?>\s*-\s*<b(?:\s[^>]*)?>Titles\/Skills:<\/b>\s*([^<]*?)\s*<br\s*\/?>\s*-\s*<b(?:\s[^>]*)?>Status:<\/b>\s*([^<]*?)\s*<br\s*\/?>\s*-\s*<b(?:\s[^>]*)?>Mods:<\/b>\s*([^<]*?)(?=\r?\n|<br\s*\/?>|<\/div>|<\/details>|$)/gim' `
   '$1<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:7px;margin:7px 0 10px;"><div style="background:rgba(137,180,250,.08);border:1px solid rgba(137,180,250,.22);border-radius:7px;padding:9px;"><span style="color:#89b4fa;font-size:.72em;font-weight:bold;">🎒 INVENTORY</span><br><span style="color:#cdd6f4;">$2</span></div><div style="background:rgba(166,227,161,.07);border:1px solid rgba(166,227,161,.2);border-radius:7px;padding:9px;"><span style="color:#a6e3a1;font-size:.72em;font-weight:bold;">✦ SKILLS / TITLES</span><br><span style="color:#cdd6f4;">$3</span></div><div style="background:rgba(243,139,168,.07);border:1px solid rgba(243,139,168,.2);border-radius:7px;padding:9px;"><span style="color:#f38ba8;font-size:.72em;font-weight:bold;">♥ STATUS</span><br><span style="color:#cdd6f4;">$4</span></div><div style="background:rgba(249,226,175,.07);border:1px solid rgba(249,226,175,.2);border-radius:7px;padding:9px;"><span style="color:#f9e2af;font-size:.72em;font-weight:bold;">± MODIFIERS</span><br><span style="color:#cdd6f4;">$5</span></div></div>'
 
 $chekhovDashboardRegex = New-StateUiRegex `
   'f52b6008-6f87-4e96-955d-0185f8f11d08' `
-  'FF5 UI - Chekhov Dashboard' `
+  'ST-STATE UI - Chekhov Dashboard' `
   '/(^|<br\s*\/?>)\s*-\s*Active:\s*([^|<\r\n]*?)\s*\|\s*Locked:\s*([^|<\r\n]*?)\s*\|\s*Fired:\s*([^<\r\n]*?)(?=\r?\n|<br\s*\/?>|<\/div>|<\/details>|$)/gim' `
   '$1<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:7px;margin:7px 0 10px;"><div style="background:rgba(137,180,250,.08);border:1px solid rgba(137,180,250,.22);border-radius:7px;padding:9px;"><span style="color:#89b4fa;font-size:.72em;font-weight:bold;">● ACTIVE</span><br><span style="color:#cdd6f4;">$2</span></div><div style="background:rgba(249,226,175,.07);border:1px solid rgba(249,226,175,.22);border-radius:7px;padding:9px;"><span style="color:#f9e2af;font-size:.72em;font-weight:bold;">◆ LOCKED</span><br><span style="color:#cdd6f4;">$3</span></div><div style="background:rgba(108,112,134,.08);border:1px solid rgba(108,112,134,.25);border-radius:7px;padding:9px;"><span style="color:#a6adc8;font-size:.72em;font-weight:bold;">✓ FIRED</span><br><span style="color:#bac2de;">$4</span></div></div>'
 
 $thoughtCardRegex = New-StateUiRegex `
   'f52b6009-6f87-4e96-955d-0185f8f11d09' `
-  'FF5 UI - Thought Cards' `
+  'ST-STATE UI - Thought Cards' `
   '/(^|<br\s*\/?>)\s*-\s*<b(?:\s[^>]*)?>\s*([^<]+?)\s*<\/b>\s*\|\s*Internal Thoughts:\s*([^<\r\n]*?)(?=\r?\n|<br\s*\/?>|<\/div>|<\/details>|$)/gim' `
   '$1<div style="background:linear-gradient(135deg,rgba(203,166,247,.09),rgba(30,30,46,.82));border:1px solid rgba(203,166,247,.23);border-left:3px solid #cba6f7;border-radius:7px;padding:10px 12px;margin:7px 0 10px;"><div style="color:#cba6f7;font-size:.76em;font-weight:bold;margin-bottom:5px;">💭 $2</div><div style="color:#cdd6f4;font-style:italic;line-height:1.5;">“$3”</div></div>'
 
 $dndDashboardRegex = New-StateUiRegex `
   'f52b6010-6f87-4e96-955d-0185f8f11d10' `
-  'FF5 UI - DND Dashboard' `
+  'ST-STATE UI - DND Dashboard' `
   '/(^|<br\s*\/?>)\s*-\s*<b(?:\s[^>]*)?>Task:<\/b>\s*([\s\S]*?)\s*<br\s*\/?>\s*-\s*<b(?:\s[^>]*)?>Locked DC:<\/b>\s*([\s\S]*?)\s*<br\s*\/?>\s*-\s*<b(?:\s[^>]*)?>User Roll:<\/b>\s*([\s\S]*?)\s*\|\s*<b(?:\s[^>]*)?>NPC Roll:<\/b>\s*([\s\S]*?)\s*<br\s*\/?>\s*-\s*<b(?:\s[^>]*)?>Outcome:<\/b>\s*([^<\r\n]*?)(?=\r?\n|<br\s*\/?>|<\/div>|<\/details>|$)/gim' `
   '$1<div style="background:linear-gradient(135deg,rgba(30,30,46,.95),rgba(17,24,39,.9));border:1px solid rgba(250,179,135,.28);border-left:3px solid #fab387;border-radius:7px;padding:10px 11px;margin:7px 0 10px;box-shadow:0 3px 10px #0004;"><div style="display:flex;align-items:center;gap:7px;margin-bottom:8px;"><b style="color:#cdd6f4;">🎲 $2</b><span style="margin-left:auto;background:rgba(250,179,135,.1);border:1px solid rgba(250,179,135,.25);color:#fab387;border-radius:999px;padding:2px 8px;font-size:.76em;">$6</span></div><div style="color:#a6adc8;margin-bottom:7px;"><span style="color:#f9e2af;font-size:.72em;font-weight:bold;">LOCKED DC</span> · $3</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:7px;"><div style="background:rgba(137,180,250,.08);border:1px solid rgba(137,180,250,.2);border-radius:6px;padding:8px;"><span style="color:#89b4fa;font-size:.7em;font-weight:bold;">USER ROLL</span><br>$4</div><div style="background:rgba(243,139,168,.07);border:1px solid rgba(243,139,168,.2);border-radius:6px;padding:8px;"><span style="color:#f38ba8;font-size:.7em;font-weight:bold;">NPC ROLL</span><br>$5</div></div></div>'
 
 $sceneWorldDashboardRegex = New-StateUiRegex `
   'f52b6011-6f87-4e96-955d-0185f8f11d11' `
-  'FF5 UI - Scene World Dashboard' `
+  'ST-STATE UI - Scene World Dashboard' `
   '/(^|<br\s*\/?>)\s*-\s*Spotlight:\s*([^|<\r\n]*?)\s*\|\s*Open Beat:\s*([^|<\r\n]*?)\s*\|\s*Time Pressure:\s*([^<\r\n]*?)\s*<br\s*\/?>\s*-\s*Env:\s*([^|<\r\n]*?)\s*\|\s*Positions:\s*([^<\r\n]*?)(?=\r?\n|<br\s*\/?>|<\/div>|<\/details>|$)/gim' `
   '$1<div style="background:linear-gradient(135deg,rgba(30,30,46,.95),rgba(17,24,39,.9));border:1px solid rgba(137,180,250,.27);border-left:3px solid #89b4fa;border-radius:7px;padding:10px 11px;margin:7px 0 10px;box-shadow:0 3px 10px #0004;"><div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:8px;"><b style="color:#cdd6f4;">◉ $2</b><span style="margin-left:auto;background:rgba(243,139,168,.08);border:1px solid rgba(243,139,168,.2);color:#f38ba8;border-radius:999px;padding:2px 8px;font-size:.76em;">TIME · $4</span></div><div style="color:#cdd6f4;margin-bottom:8px;"><span style="color:#89b4fa;font-size:.72em;font-weight:bold;">OPEN BEAT</span><br>$3</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:7px;"><div style="background:rgba(166,227,161,.06);border:1px solid rgba(166,227,161,.18);border-radius:6px;padding:8px;"><span style="color:#a6e3a1;font-size:.7em;font-weight:bold;">ENVIRONMENT</span><br>$5</div><div style="background:rgba(203,166,247,.06);border:1px solid rgba(203,166,247,.18);border-radius:6px;padding:8px;"><span style="color:#cba6f7;font-size:.7em;font-weight:bold;">POSITIONS</span><br>$6</div></div></div>'
 
