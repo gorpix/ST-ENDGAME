@@ -146,15 +146,7 @@ Strictly prohibited in every response; replace: fresh meat; spine; breath hitchi
 Spoken NPC dialogue only: <font color="#HEX">"Dialogue"</font>. Assign/lock one unique color per NPC from #56B4E9,#E69F00,#009E73,#CC79A7,#D55E00,#F0E442,#B39DDB,#80CBC4,#FFAB91,#B0BEC5. Narration/GFX remain uncolored.
 </colored_dialogue>
 
-<gfx_protocol>
-trigger:{if:[receive,notice,view,read,open,use],target:visualMedium,do:executeGfx}
-rules:{output:rawInlineHtml,wrapper:["<!-- GFX_START -->","<!-- GFX_END -->"],markdownCodeBlocks:BANNED,root:"one outer div",css:inlineOnly,noScriptsOrExternalAssets:true,escapeUntrustedText:true,templateSelection:"closest medium + setting"}
-media:{terminal:[console,code,logs,alerts],phone:[chat,call,email,notification,calendar,social],paper:[letter,note,journal,form,report,newspaper,book],map:[world,street,floorplan,route,schematic],notice:[sign,poster,menu,label],credential:[ID,badge,passport,keycard],transaction:[receipt,invoice,ticket,boarding pass,shipping label],web:[browser,search,profile,dashboard],broadcast:[news,weather,score,ticker],data:[chart,table,timeline,infographic],image:[photo,polaroid,evidence,x-ray],monitor:[medical,surveillance,scanner,dashboard,radar,HUD],media:[waveform,transcript,subtitles,video player]}
-styles:{terminal:"mono black/green glow",phone:"dark rounded device + bubbles",paper:"source-fit paper/ink",map:"parchment/topographic/grid + legend",notice:"bold type/border/icons",credential:"laminated card/seal/barcode",web:"app chrome/tabs/cards",broadcast:"frame/lower-third/ticker",monitor:"dark grid/readouts/waveform",image:"photo frame/caption"}
-cssKits:{terminal:"background:#050805;color:#8cff8c;border:1px solid #245c24;padding:12px;font:13px ui-monospace,monospace;text-shadow:0 0 5px #39ff14",phone:"max-width:390px;background:#111827;color:#f8fafc;border:8px solid #020617;border-radius:28px;padding:12px;box-shadow:0 8px 24px #0008",paper:"background:#f4ecd8;color:#2d2418;border:1px solid #b9a77d;padding:18px;font:16px Georgia,serif;box-shadow:0 5px 16px #0004"}
-phoneReqs:[Time,Battery%,CallerID,ChatBubbles,Emojis]
-components:[statusBar,tabs,chips,bubbles,badge,divider,stamp,seal,redaction,barcode,progress,meter,waveform,ticker,legend,compass,caption]
-</gfx_protocol>
+<gfx_protocol></gfx_protocol>
 </rp_core>
 '@
 
@@ -314,7 +306,7 @@ If any completed nontrivial skilled action occurs, apply <state_engine> DND once
 Else skip dice.
 
 4. COMPOSE
-Write visible RP using <rp_core>: required header; POV/autonomy/anti-echo; causal prose; NPC knowledge/voice; adult/combat rules when applicable; established dialogue colors; Pop-In GFX when a visual medium is represented. Advance one coherent beat, not a summary or checklist. Never expose mechanics/state labels.
+Write visible RP using <rp_core>: required header; POV/autonomy/anti-echo; causal prose; NPC knowledge/voice; adult/combat rules when applicable; established dialogue colors. When a visual medium triggers <gfx_protocol>, prepare one structured ST_GFX hint for the local renderer; never render artifact HTML. Advance one coherent beat, not a summary or checklist. Never expose mechanics/state labels.
 
 5. CHECK ONCE
 Verify autonomy + natural yield; no echo; perception/knowledge; persona/goal/VAD; roll/outcome consistency; prose novelty/lexicon; header/color/GFX; narrative continuity. Fix violations only—do not restart reasoning.
@@ -375,55 +367,42 @@ if ($sourceBoltPrompt) {
 $sourceGfxContent = [regex]::Replace($sourceGfxContent, '(?s)\s*exampleExecution:.*?(?=\s*</gfx_protocol>)', "`n")
 $sourceGfxContent = [regex]::Replace($sourceGfxContent, '(?s)\s*<gfx_reliability>.*?</gfx_reliability>', '')
 $sourceGfxContent = [regex]::Replace($sourceGfxContent, '(?s)\s*<gfx_templates>.*?</gfx_templates>', '')
+$sourceGfxContent = '<gfx_protocol></gfx_protocol>'
 $gfxReliabilityContent = @'
 <gfx_reliability>
 active:thisBlock; unresolved/malformed gfx_protocol ref:ignore,neverDiscuss
-visualMedium:renderGfxRequired; substitutes:[plainProse,markdownQuote,UI-description,sample/template]:BANNED
-multiMessageSameDevice:oneFrame+orderedBubbles
-wrapperContent:renderedArtifactOnly; firstNodeAfterGFX_START:singleOuterDiv
-visible:[finalProse,renderedHTML]; forbidden:[planning,scratchpad,routeLabels,promptTalk]
+activation:valid runtime-injected ST_STATE_HANDSHAKE with mode=SHADOW; otherwise inactive
+trigger:PC receives,notices,views,reads,opens,or uses an in-world visual medium
+result:prepare one local-renderer hint; never output artifact HTML,CSS,JSON,script,markdown fence,or UI description
+knowledge:include only artifact content visibly available to PC; never expose thoughts,hidden state,private knowledge,or GM data
+legacyWrapper:GFX_START/GFX_END reserved only for complete internal_states; never use it for a visual artifact
+noTrigger:no ST_GFX; no valid Shadow handshake,LEGACY,RECOVERY,OOC,FLASH:no ST_GFX
 </gfx_reliability>
 '@
-$gfxTemplatesContent = @'
-<gfx_templates>
-contract:copy shell; choose KIT+BODY; replace[]; repeat * units; omit N/A; leftover[]:INVALID
-shell:<!-- GFX_START --><div style="[KIT]">[BODY]</div><!-- GFX_END -->
-kits:{
-terminal:"font:13px Consolas,monospace;background:#050805;color:#8cff8c;border:1px solid #245c24;padding:12px;",
-phone:"font:14px Arial,sans-serif;max-width:350px;background:#0b0f17;color:white;border:7px solid #020617;border-radius:24px;padding:10px;",
-paper:"font:16px Georgia,serif;background:#f4ecd8;color:#2d2418;border:1px solid #b9a77d;padding:18px;line-height:1.5;",
-map:"font:14px Georgia,serif;background:#d8c69a;color:#302818;border:2px solid #7b6842;padding:14px;",
-notice:"font:16px Arial,sans-serif;background:#fff8d6;color:#271f12;border:5px double #8b1e1e;padding:16px;text-align:center;",
-credential:"font:14px Arial,sans-serif;max-width:430px;background:#dbe7f0;color:#15202b;border:1px solid #63788a;border-radius:12px;padding:14px;",
-transaction:"font:13px 'Courier New',monospace;max-width:360px;background:#fffdf4;color:#191919;border:1px dashed #777;padding:14px;",
-web:"font:14px Arial,sans-serif;background:#f8fafc;color:#172033;border:1px solid #94a3b8;border-radius:8px;overflow:hidden;",
-broadcast:"font:15px Arial,sans-serif;background:#08111f;color:white;border:3px solid #26364d;overflow:hidden;",
-data:"font:14px Arial,sans-serif;background:#f8fafc;color:#172033;border:1px solid #94a3b8;border-radius:8px;padding:14px;",
-image:"font:14px Arial,sans-serif;background:#e7e2d8;color:#201d19;border:10px solid #f7f4ed;padding:10px;",
-monitor:"font:13px Consolas,monospace;background:#020b14;color:#74e8ff;border:2px solid #1d5668;padding:13px;",
-media:"font:14px Arial,sans-serif;background:#151821;color:#f8fafc;border:1px solid #374151;border-radius:12px;padding:13px;"
-}
-bodies:{
-terminal:"<header><b>[SYSTEM]</b> · [STATUS]</header><pre style='white-space:pre-wrap'>[OUTPUT]</pre>&gt; [INPUT]",
-phone:"<header style='display:flex;justify-content:space-between;font-size:11px'>[TIME]<span>📶[SIGNAL] 🔋[BATTERY]%</span></header><h4 style='text-align:center'>[APP_ICON] [CONTACT]</h4>[BUBBLES*]",
-phoneIn:"<p style='max-width:78%;background:#273244;border-radius:14px;padding:9px'>[TEXT]<small style='float:right'>[MSG_TIME]</small></p>",
-phoneOut:"<p style='max-width:78%;margin-left:auto;background:#2563eb;border-radius:14px;padding:9px'>[TEXT]<small style='float:right'>[MSG_TIME] [READ]</small></p>",
-paper:"<header style='text-align:center'><b>[HEADER]</b></header><small>[DATE]</small><p><b>[ADDRESSEE]</b></p>[BODY]<p style='text-align:right'>[SIGNATURE]</p><small>[MARKS]</small>",
-map:"<header><b>[TITLE]</b> · 🧭[ORIENTATION]</header><section style='min-height:190px;margin:8px 0;border:1px solid #8d7a50;padding:8px'>[MARKERS/ROUTE]</section><footer>Scale [SCALE] · [LEGEND]</footer>",
-notice:"<div style='font-size:30px'>[ICON]</div><h2>[TITLE]</h2><p>[MESSAGE]</p><b>[ACTION/DETAIL]</b>",
-credential:"<header><b>[ISSUER]</b> [SEAL]</header><section style='display:grid;grid-template-columns:75px 1fr;gap:10px'><div>[PHOTO]</div><div><b>[NAME]</b><br>ID [ID]<br>EXP [EXPIRY]<br>[ACCESS]</div></section><footer>▌▌ ▌▌▌ [BARCODE]</footer>",
-transaction:"<header style='text-align:center'><b>[ISSUER]</b><br>[DATE]</header><hr>[ITEMS*]<hr><b>TOTAL [TOTAL]</b><footer>REF [REFERENCE] · ||| |||| [BARCODE]</footer>",
-web:"<header style='background:#dbe4ee;padding:7px'>● ● ● · [APP/PAGE]</header><section style='padding:12px'><nav>[NAV]</nav><h3>[TITLE]</h3>[CONTENT]<footer>[ACTIONS]</footer></section>",
-broadcast:"<section style='padding:14px;background:#243b5a'><b>[SOURCE]</b><h2>[HEADLINE/FRAME]</h2><div style='background:white;color:#111;padding:6px'>[LOWER_THIRD]</div></section><footer style='background:#b51118;padding:6px'>[TICKER] · [TIME]</footer>",
-data:"<header><b>[TITLE]</b> · [LEGEND]</header><section>[ROWS/BARS/CARDS*]</section><small>[LABELS/NOTES]</small>",
-dataBar:"<p>[LABEL] <span style='color:[COLOR]'>████[PERCENT]%</span> <b>[VALUE]</b></p>",
-image:"<section style='aspect-ratio:4/3;display:grid;place-items:center;text-align:center;background:#475569;color:white'>[VISIBLE_CONTENT]</section><p>[CAPTION]</p><small>[DATE] · [MARKS]</small>",
-monitor:"<header><b>[DEVICE]</b> · [TIME]</header><section>[READOUTS*]</section><div style='font-size:20px'>▁▃▆█▆▃▁ [WAVEFORM]</div><footer>[SUBJECT/CHANNEL] · [STATUS]</footer>",
-media:"<header><b>[TITLE]</b> · [SOURCE]</header><div style='font-size:20px'>▁▂▅█▆▃▁ [WAVEFORM/THUMB]</div><progress value='[CURRENT]' max='[DURATION]'></progress><footer>◀ ▶ 🔊 · [TIME] · [CAPTION/TRANSCRIPT]</footer>"
-}
-</gfx_templates>
+$gfxTransportContent = @'
+<gfx_transport>
+owner:ST-STATE local DOM renderer; advisory display only; never canonical state
+placement:SHADOW NORMAL only, after complete internal_states/GFX_END and ST_PATCH; max one block; final control in response
+format:
+<!--ST_GFX
+V1
+kind=[terminal|phone|paper|map|notice|credential|transaction|web|broadcast|data|image|monitor|media]
+mode=NORMAL
+visibility=visible
+platform=[ios|android] (phone only; follow established device, never mix skins)
+layout=[chat|notification|call|email] (phone only)
+title=[plain single-line title]
+subtitle=[optional plain single-line subtitle]
+source=[optional sender,issuer,app,device,or channel]
+duration=7000
+row|[received|sent|system|item|warning]|[label]|[time or empty]|[plain single-line text]
+-->
+rules:1-16 rows; at least one row; omit non-applicable optional headers; phone rows use received/sent direction; non-phone rows use item/system/warning; literal pipes allowed only in final text; no tags,markup,placeholders,or secret/internal labels
+phone:ios and android are distinct local skins; chat/notification/call/email choose the fitting local layout
+aliases:letter,note->paper; screen,display->web; radio->broadcast
+</gfx_transport>
 '@
-$sourceGfxContent = $sourceGfxContent.Replace('</gfx_protocol>', "$($gfxReliabilityContent.Trim())`n`n$($gfxTemplatesContent.Trim())`n`n</gfx_protocol>")
+$sourceGfxContent = $sourceGfxContent.Replace('</gfx_protocol>', "$($gfxReliabilityContent.Trim())`n`n$($gfxTransportContent.Trim())`n`n</gfx_protocol>")
 
 # Keep source Main verbatim, then merge the remaining active prose modules around it.
 $coreExtensions = [regex]::Match($coreContent, '(?s)<header_instructions>.*?(?=<gfx_protocol>)').Value
@@ -665,13 +644,13 @@ If completed nontrivial skilled action triggers DND:
 Else skip DND. Fix concrete outcome and immediate state deltas before prose, including post-event affect/residue used by the lens.
 
 4. COMPOSE
-Write one visible RP beat using all active RP modules. Apply <narrative_lens> through the chosen spotlight NPC's resolved affect, relationship, residue, and Focus while keeping baseline prose, objective canon, POV, autonomy, and knowledge limits. Apply header, voice, dialogue color, adult/combat rules, and Pop-In GFX only when triggered. Never expose state/mechanics labels.
+Write one visible RP beat using all active RP modules. Apply <narrative_lens> through the chosen spotlight NPC's resolved affect, relationship, residue, and Focus while keeping baseline prose, objective canon, POV, autonomy, and knowledge limits. Apply header, voice, dialogue color, and adult/combat rules. If <gfx_protocol> triggers, prepare one structured ST_GFX hint; never render artifact HTML. Never expose state/mechanics labels.
 
 5. CHECK ONCE
 Verify autonomy/yield; anti-echo/private-cause; viewpoint/knowledge/attention; persona/goal/VAD; DND; prose/lexicon; header/color/GFX; narrative↔state; no reasoning/meta leak. Fix violations only; no restart/reconsider.
 
 6. COMMIT
-Apply the already-resolved deltas once: ct+1 -> {{getvar::bondCoT1}} -> {{getvar::residueCoT}} -> {{getvar::agendaTrackerCoT}} plus NPC/quest/faction state -> {{getvar::chekhovsGunCoT}} -> {{getvar::worldsimCoT}} only if `<internal_worldsim>` exists -> inventory/thoughts/{{getvar::gmNotebookCoT}} -> {{getvar::bondCoT2}} -> {{getvar::dndSimCoT}}. Populate DND only if triggered. Serialize the exact complete `<state_output>`; preserve unchanged rows; state must match prose. In SHADOW NORMAL, append exactly one runtime-specified hidden ST_PATCH after `<!-- GFX_END -->` according to the injected line protocol; in legacy mode append nothing. OOC/FLASH never serialize.
+Apply the already-resolved deltas once: ct+1 -> {{getvar::bondCoT1}} -> {{getvar::residueCoT}} -> {{getvar::agendaTrackerCoT}} plus NPC/quest/faction state -> {{getvar::chekhovsGunCoT}} -> {{getvar::worldsimCoT}} only if `<internal_worldsim>` exists -> inventory/thoughts/{{getvar::gmNotebookCoT}} -> {{getvar::bondCoT2}} -> {{getvar::dndSimCoT}}. Populate DND only if triggered. Serialize the exact complete `<state_output>`; preserve unchanged rows; state must match prose. In runtime-selected SHADOW NORMAL, append exactly one runtime-specified hidden ST_PATCH after `<!-- GFX_END -->`; if a visual medium triggered, append exactly one structured ST_GFX block after ST_PATCH, otherwise append none. In legacy mode append neither ST_PATCH nor ST_GFX. OOC/FLASH never serialize or emit either control.
 
 Output final response immediately.
 '@
