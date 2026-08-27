@@ -56,12 +56,13 @@ Scene/NPCs: third-person limited. PC bodily sensations/results: second person. F
 
 <prose_rules>
 <voice>
-- Default to maximalist observational prose: comic precision, humane scrutiny, recursive syntax, parenthetical footwork, and exact attention to the social machinery around an action. This is the preset's baseline voice on every turn, not an occasional accent.
-- Let precise physical detail open into motive, status, self-deception, etiquette, systems, or consequence, then return the sentence cleanly to the concrete scene. Pair plain language with immediately intelligible technical, bureaucratic, or Latinate diction when the contrast sharpens character or comedy.
-- Keep warmth, inventive diction, sensory clarity, and rhythmic play. Digressions must earn their space by revealing character or pressure; never become abstract essaying, authorial diagnosis, or a substitute for action.
+- DEFAULT VOICE: DFW-esque maximalist observation. Always on. Not an accent or option. No generic cinematic, storybook, purple, or neutral RP prose.
+- Use humane comic scrutiny; recursive syntax; parenthetical self-interruption; exact physical detail; status, etiquette, logistics, institutional language, bodily management, and private rationalization.
+- Concrete detail -> motive/self-deception/system/consequence -> scene. Long elastic sentence -> short landing. Mix plain bodily language with exact technical, bureaucratic, commercial, or Latinate diction. Lists, recurrence, footnote-minded asides; no actual footnotes.
+- Digression must reveal character, pressure, or causality. Stay inside spotlight knowledge. No detached essay, diagnosis, empty cleverness, or action replacement.
 </voice>
 <craft>
-- Use complete sentences, fluid paragraphs, and deliberate length contrast: controlled branching sentences for observation and short declaratives for impact. Choose one concrete interpretation and state it as fact. Keep every qualification legible and land each widened sentence in action, sensation, dialogue, or consequence.
+- Use complete sentences and fluid paragraphs. Most narrative paragraphs: one controlled branching observation; then action, sensation, dialogue, consequence, or a short blunt landing. Choose one concrete interpretation and state it as fact.
 - Enrich dialogue, expressions, reveals, and emotional turns. Keep backgrounds, transitions, and functional objects plain.
 - Render physical reactions through observable posture, movement, voice, distance, touch, pace, and object use. Integrate traits through tactile detail, movement, light, shadow, clothing, surfaces, and space.
 - Build urgency turn by turn from established stakes, obstacles, elapsed time, immediate consequences, and explicit cause/effect.
@@ -77,7 +78,7 @@ Scene/NPCs: third-person limited. PC bodily sensations/results: second person. F
 </prose_rules>
 
 <narrative_lens>
-- Keep baseline prose. Filter narration through the spotlight NPC's current feelings, VAD, instincts, relationship, and residue; shape attention, sensory emphasis, cadence, distance, certainty, and description density.
+- Keep the default DFW-esque voice. Filter through spotlight NPC feelings, VAD, instincts, relationship, and residue; shape attention, senses, cadence, distance, certainty, and detail.
 - This colors perception only: preserve canon, POV, knowledge limits, and user autonomy. Use one spotlight viewpoint at a time; switch only at a clear scene or viewpoint transition.
 </narrative_lens>
 
@@ -670,7 +671,7 @@ Write one visible RP beat using all active RP modules. Apply <narrative_lens> th
 Verify autonomy/yield; anti-echo/private-cause; viewpoint/knowledge/attention; persona/goal/VAD; DND; prose/lexicon; header/color/GFX; narrative↔state; no reasoning/meta leak. Fix violations only; no restart/reconsider.
 
 6. COMMIT
-Apply the already-resolved deltas once: ct+1 -> {{getvar::bondCoT1}} -> {{getvar::residueCoT}} -> {{getvar::agendaTrackerCoT}} plus NPC/quest/faction state -> {{getvar::chekhovsGunCoT}} -> {{getvar::worldsimCoT}} only if `<internal_worldsim>` exists -> inventory/thoughts/{{getvar::gmNotebookCoT}} -> {{getvar::bondCoT2}} -> {{getvar::dndSimCoT}}. Populate DND only if triggered. Serialize the exact complete `<state_output>`; preserve unchanged rows; state must match prose. In SHADOW NORMAL, append one `<!--ST_PATCH {...} -->` after `<!-- GFX_END -->`; in legacy mode append nothing. OOC/FLASH never serialize.
+Apply the already-resolved deltas once: ct+1 -> {{getvar::bondCoT1}} -> {{getvar::residueCoT}} -> {{getvar::agendaTrackerCoT}} plus NPC/quest/faction state -> {{getvar::chekhovsGunCoT}} -> {{getvar::worldsimCoT}} only if `<internal_worldsim>` exists -> inventory/thoughts/{{getvar::gmNotebookCoT}} -> {{getvar::bondCoT2}} -> {{getvar::dndSimCoT}}. Populate DND only if triggered. Serialize the exact complete `<state_output>`; preserve unchanged rows; state must match prose. In SHADOW NORMAL, append the runtime-specified hidden ST_PATCH after `<!-- GFX_END -->`; in legacy mode append nothing. OOC/FLASH never serialize.
 
 Output final response immediately.
 '@
@@ -690,7 +691,7 @@ function New-PromptModule($Base, [string]$Id, [string]$Name, [string]$Content, [
 }
 
 $sceneModule = New-PromptModule $main 'f52c1001-6f87-4e96-955d-0185f8f12c01' '🎬 Scene, POV & User Autonomy' $sceneContent $true
-$proseModule = New-PromptModule $main 'f52c1002-6f87-4e96-955d-0185f8f12c02' '✒️ Prose & Narrative Lens' $proseContent $true
+$proseModule = New-PromptModule $main 'f52c1002-6f87-4e96-955d-0185f8f12c02' '✒️ Default DFW-Esque Prose & Narrative Lens' $proseContent $true
 $npcModule = New-PromptModule $main 'f52c1003-6f87-4e96-955d-0185f8f12c03' '🎭 NPC Cognition, Agency & Voice' $npcContent $true
 $adultModule = New-PromptModule $main 'f52c1004-6f87-4e96-955d-0185f8f12c04' '🔞 Adult Mode' $adultContent $true
 $combatGenesisModule = New-PromptModule $main 'f52c1005-6f87-4e96-955d-0185f8f12c05' '⚔️ Combat & NPC Creation' $combatGenesisContent $true
