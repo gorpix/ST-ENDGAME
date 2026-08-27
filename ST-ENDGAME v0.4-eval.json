@@ -138,20 +138,6 @@
       "enabled": true
     },
     {
-      "identifier": "f52c1008-6f87-4e96-955d-0185f8f12c08",
-      "name": "🌀 Default Maximalist Narrative Voice",
-      "system_prompt": true,
-      "marker": false,
-      "content": "<default_maximalist_voice>\n- Apply the maximalist observational voice throughout ordinary narration as well as comic, anxious, analytical, intimate, and socially awkward pressure.\n- Widen sentences through precise qualification, apposition, parenthetical turns, recursive observation, and a clean late payoff; vary them against short concrete sentences.\n- Track the small systems around behavior—status, etiquette, institutional language, bodily management, and self-protective logic—only when they expose character or sharpen the scene.\n- Resolve every digression into concrete action, sensation, dialogue, or consequence. Preserve POV, knowledge boundaries, user autonomy, and descriptive economy.\n</default_maximalist_voice>",
-      "role": "system",
-      "injection_position": 0,
-      "injection_depth": 4,
-      "forbid_overrides": false,
-      "injection_order": 100,
-      "injection_trigger": [],
-      "enabled": true
-    },
-    {
       "identifier": "worldInfoBefore",
       "name": "Lorebook Before",
       "system_prompt": true,
@@ -288,10 +274,6 @@
         },
         {
           "identifier": "f52c1007-6f87-4e96-955d-0185f8f12c07",
-          "enabled": true
-        },
-        {
-          "identifier": "f52c1008-6f87-4e96-955d-0185f8f12c08",
           "enabled": true
         },
         {

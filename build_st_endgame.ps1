@@ -469,14 +469,6 @@ $lexiconDialogueContent = Join-PromptBlocks @(
   (Get-TaggedBlock $coreExtensions 'colored_dialogue')
 )
 $gfxModuleContent = $sourceGfxContent.Trim()
-$accentContent = @'
-<default_maximalist_voice>
-- Apply the maximalist observational voice throughout ordinary narration as well as comic, anxious, analytical, intimate, and socially awkward pressure.
-- Widen sentences through precise qualification, apposition, parenthetical turns, recursive observation, and a clean late payoff; vary them against short concrete sentences.
-- Track the small systems around behavior—status, etiquette, institutional language, bodily management, and self-protective logic—only when they expose character or sharpen the scene.
-- Resolve every digression into concrete action, sensation, dialogue, or consequence. Preserve POV, knowledge boundaries, user autonomy, and descriptive economy.
-</default_maximalist_voice>
-'@
 
 # Preserve the expanded optimized relationship engine exactly; compact state peers around it.
 $stateContent = [regex]::Replace($stateContent, '(?s)AGENDA:\s*.*?(?=\s*RELATIONSHIPS:)', "</internal_inv>`n`n" + $sourceAgendaContent.Trim() + "`n`n")
@@ -705,8 +697,7 @@ $combatGenesisModule = New-PromptModule $main 'f52c1005-6f87-4e96-955d-0185f8f12
 $lexiconDialogueModule = New-PromptModule $main 'f52c1006-6f87-4e96-955d-0185f8f12c06' '🗣️ Lexicon & Dialogue Color' $lexiconDialogueContent $true
 $gfxVariableSetterContent = '{{setvar::gfx_protocol::' + $gfxModuleContent + '}}{{trim}}'
 $gfxModule = New-PromptModule $main 'f52c1007-6f87-4e96-955d-0185f8f12c07' '🖼️ Pop-In Graphics (Variable Source)' $gfxVariableSetterContent $true
-$accentModule = New-PromptModule $main 'f52c1008-6f87-4e96-955d-0185f8f12c08' '🌀 Default Maximalist Narrative Voice' $accentContent $true
-$rpModules = @($sceneModule, $proseModule, $npcModule, $adultModule, $combatGenesisModule, $lexiconDialogueModule, $gfxModule, $accentModule)
+$rpModules = @($sceneModule, $proseModule, $npcModule, $adultModule, $combatGenesisModule, $lexiconDialogueModule, $gfxModule)
 
 $state = Get-Prompt '019f62e8-892f-7027-93ef-159f3d55c410'
 $state.name = '🎮 Unified State Engine'
