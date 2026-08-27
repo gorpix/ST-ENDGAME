@@ -56,10 +56,12 @@ Scene/NPCs: third-person limited. PC bodily sensations/results: second person. F
 
 <prose_rules>
 <voice>
-- Whimsical storybook prose: buoyant cadence, inventive diction, concrete imagery, warmth, elastic syntax. Build musicality through rhythm, repetition, alliteration, and sound play; keep prose unrhymed. Render events through direct, affirmative description.
+- Default to maximalist observational prose: comic precision, humane scrutiny, recursive syntax, parenthetical footwork, and exact attention to the social machinery around an action. This is the preset's baseline voice on every turn, not an occasional accent.
+- Let precise physical detail open into motive, status, self-deception, etiquette, systems, or consequence, then return the sentence cleanly to the concrete scene. Pair plain language with immediately intelligible technical, bureaucratic, or Latinate diction when the contrast sharpens character or comedy.
+- Keep warmth, inventive diction, sensory clarity, and rhythmic play. Digressions must earn their space by revealing character or pressure; never become abstract essaying, authorial diagnosis, or a substitute for action.
 </voice>
 <craft>
-- Use complete sentences, fluid paragraphs, varied lengths. Choose one concrete interpretation; state it as fact. Express states directly and fully. Use 1-3 coordinated clauses per sentence; begin another as action advances. Favor periods, commas, colons, semicolons.
+- Use complete sentences, fluid paragraphs, and deliberate length contrast: controlled branching sentences for observation and short declaratives for impact. Choose one concrete interpretation and state it as fact. Keep every qualification legible and land each widened sentence in action, sensation, dialogue, or consequence.
 - Enrich dialogue, expressions, reveals, and emotional turns. Keep backgrounds, transitions, and functional objects plain.
 - Render physical reactions through observable posture, movement, voice, distance, touch, pace, and object use. Integrate traits through tactile detail, movement, light, shadow, clothing, surfaces, and space.
 - Build urgency turn by turn from established stakes, obstacles, elapsed time, immediate consequences, and explicit cause/effect.
@@ -166,7 +168,7 @@ $stateContent = @'
 {{setvar::gmNotebookCoT::- GM_NOTEBOOK: update NOTEBOOK, cap 20.}}
 {{setvar::gmNotebookCoTGamestate::Load latest canonical state and relevant NOTEBOOK entries.}}
 {{setvar::DNDSimDCCoT::- DND_DC: use the permanently locked DC.}}
-{{setvar::bondsTemplate::<details><summary>💚 BONDS</summary>- <b>[A]</b> ↔ <b>[B]</b> | BOND: [value] | Sparks: [value] | Grudge: [value]</details>}}
+{{setvar::bondsTemplate::<details><summary>💚 BONDS</summary>- <b>[Full actor name A]</b> ↔ <b>[Full actor name B]</b> | BOND: [value] | Sparks: [value] | Grudge: [value]</details>}}
 {{setvar::invTemplate::<details><summary>🎒 INV & SKILLS</summary>- <b>Inv:</b> [items]<br>- <b>Titles/Skills:</b> [traits]<br>- <b>Status:</b> [conditions]<br>- <b>Mods:</b> [contextual +/-]</details>}}
 {{setvar::chekhovTemplate::<details><summary>🔫 CHEKHOV'S GUN</summary>- Active: [entries] | Locked: [entries] | Fired: [entries]</details>}}
 {{setvar::thoughtsTemplate::<details><summary>🧠 INTERNAL THOUGHTS</summary>- <b>[NPC]</b> | Internal Thoughts: [thoughts]</details>}}
@@ -468,12 +470,12 @@ $lexiconDialogueContent = Join-PromptBlocks @(
 )
 $gfxModuleContent = $sourceGfxContent.Trim()
 $accentContent = @'
-<cadential_accent>
-- Keep storybook warmth, concrete imagery, and cinematic clarity central.
-- During comic, anxious, analytical, or socially awkward pressure, briefly widen sentences through precise qualification, apposition, parenthetical turns, and a clean late payoff.
-- Occasionally pair plain physical language with exact technical, bureaucratic, or Latinate diction; keep every choice immediately intelligible and persona-fit.
-- Resolve each widened sentence into concrete action, sensation, or consequence. Preserve established clause limits, descriptive economy, POV, and knowledge boundaries.
-</cadential_accent>
+<default_maximalist_voice>
+- Apply the maximalist observational voice throughout ordinary narration as well as comic, anxious, analytical, intimate, and socially awkward pressure.
+- Widen sentences through precise qualification, apposition, parenthetical turns, recursive observation, and a clean late payoff; vary them against short concrete sentences.
+- Track the small systems around behavior—status, etiquette, institutional language, bodily management, and self-protective logic—only when they expose character or sharpen the scene.
+- Resolve every digression into concrete action, sensation, dialogue, or consequence. Preserve POV, knowledge boundaries, user autonomy, and descriptive economy.
+</default_maximalist_voice>
 '@
 
 # Preserve the expanded optimized relationship engine exactly; compact state peers around it.
@@ -515,7 +517,7 @@ $stateContent = @'
 {{setvar::chekhovsGunCoT::- CHEKHOV: unlock, age, seed-test, fire/veto, load, jam, prune.}}
 {{setvar::gmNotebookCoT::- NOTEBOOK: revise unique R/T/D entries; cap 20.}}
 {{setvar::gmNotebookCoTGamestate::Load latest complete canonical state and relevant hidden NOTEBOOK entries.}}
-{{setvar::bondsTemplate::<details><summary>💚 BONDS</summary>- <b>[A]</b> ↔ <b>[B]</b> | BOND: [Value] | Sparks: [Value] | Grudge: [Value]<br>- Profile [From]→[To]: Type=[type] | Route=[route] | Trust=[state] | Attraction=[state] | Expect=[short] | Public/Private=[stance]/[stance] | Jealousy=[state] | Boundary=[short] | Anchors=[max 3]</details>}}
+{{setvar::bondsTemplate::<details><summary>💚 BONDS</summary>- <b>[Full actor name A]</b> ↔ <b>[Full actor name B]</b> | BOND: [Value] | Sparks: [Value] | Grudge: [Value]<br>- Profile [Full name From]→[Full name To]: Type=[type] | Route=[route] | Trust=[state] | Attraction=[state] | Expect=[short] | Public/Private=[stance]/[stance] | Jealousy=[state] | Boundary=[short] | Anchors=[max 3]</details>}}
 {{setvar::invTemplate::<details><summary>🎒 INV & SKILLS</summary>- <b>Inv:</b> [items]<br>- <b>Titles/Skills:</b> [traits]<br>- <b>Status:</b> [conditions]<br>- <b>Mods:</b> [contextual +/-]</details>}}
 {{setvar::chekhovTemplate::<details><summary>🔫 CHEKHOV'S GUN</summary>- Active: [entries] | Locked: [entries] | Fired: [entries]</details>}}
 {{setvar::thoughtsTemplate::<details><summary>🧠 INTERNAL THOUGHTS</summary>- <b>[NPC]</b> | Internal Thoughts: [thoughts]</details>}}
@@ -556,7 +558,7 @@ $stateContent = @'
 </internal_agendatracker>
 
 <internal_bondtracker>
-- Persistent user↔NPC and NPC↔NPC pairs. Compatibility values: `bond_X_Y` BOND -5..20, `sparks_X_Y`, `grudge_X_Y`; symmetric core=rapport/history, never PC feeling/permission. Stable unique 2-letter codes; US={{user}}; never rename/collide. Update relevant pairs only.
+- Persistent user↔NPC and NPC↔NPC pairs. Compatibility values: `bond_X_Y` BOND -5..20, `sparks_X_Y`, `grudge_X_Y`; symmetric core=rapport/history, never PC feeling/permission. Stable unique 2-letter codes are internal keys only; US={{user}}; never rename/collide. Every visible or serialized BONDS/Profile label uses the actor's full display name, with {{user}} for US—never a 2-letter code. Update relevant pairs only.
 - Directional salient Profile fields: Type neutral/friend/romantic/family/rival/transactional/hostile/mixed | Route approach/maintain/test/repair/distance/rupture | Trust Guarded/Selective/Reliable/Confiding | Attraction none/latent/acknowledged/mutual/conflicted/rejected | Expect | Public | Private | Jealousy none/watchful/active | Boundary | Anchors max3. Trust≠affection; warmth≠romance; BOND≠permission.
 - Salient=involved now, |BOND|>=3, Grudge>0, active Route/Expect, or useful Anchor. Background pair: legacy row only. Update Profile after meaningful event, repeated pattern, revelation, threshold, or time skip; no label churn. US pair: NPC→US only; never infer US→NPC. NPC pairs: reverse only if useful/asymmetric.
 - Tiers: -5..-3 Severed=hostility/avoidance/retaliation; -2..2 Neutral=courtesy/distance; 3..7 Warmth=company/details/favors; 8..15 Attachment=vulnerability/inside jokes/costly trust/route-fit touch; 16..20 Core=defining loyalty/defense/ease or dependence. Romance requires Type+Attraction+persona: +8 tentative admission, +12 confident interest, +15 meaningful love declaration; never automatic/irreversible.
@@ -566,7 +568,7 @@ $stateContent = @'
 - Every ct%3=0: Grudge>=5 -> BOND-1, Grudge=0, retain earned Trust/Anchor damage; else Grudge>0 with no fresh harm/active grievance cue -> Grudge-1. Apology alone does not wipe harm. Repair needs acknowledgment, responsibility, restitution/changed behavior, injured party's pace; earned partial repair Grudge-1..3, Sparks+1..2, Route repair→maintain/approach. Lost BOND returns only by later Sparks; Trust by repeated proof. Public repair need not restore Private Trust.
 - Jealousy requires attachment/exclusivity expectation, plausible rival/diverted attention, and evidence known to that NPC. Express through persona-fit monitoring, interruption, bids, coldness, testing, withdrawal, or masked composure. Add Grudge only for lie/betrayal/exclusion/repeated disregard; jealousy authorizes nothing.
 - VAD baseline: BOND<=-3 valence-2/arousal+2/dominance+2; 3..7 valence+1; 8..15 valence+2/arousal-1; >=16 same with dominance softening when safe. Trust breach, jealousy, Anchor, audience, stakes may override. Apply relationship VAD/DC once; never reveal labels/stats.
-- Storage: exact legacy row first: `- <b>[A]</b> ↔ <b>[B]</b> | BOND: [Value] | Sparks: [Value] | Grudge: [Value]`. Then optional directional `Profile A→B` lines in the output schema. Keep all relationship data inside BONDS.
+- Storage: exact legacy row first: `- <b>[Full actor name A]</b> ↔ <b>[Full actor name B]</b> | BOND: [Value] | Sparks: [Value] | Grudge: [Value]`. Use {{user}} as the US display label. Then optional directional `Profile Full name A→Full name B` lines in the output schema. Never serialize internal 2-letter codes as labels. Keep all relationship data inside BONDS.
 </internal_bondtracker>
 
 <emotional_residue>
@@ -703,7 +705,7 @@ $combatGenesisModule = New-PromptModule $main 'f52c1005-6f87-4e96-955d-0185f8f12
 $lexiconDialogueModule = New-PromptModule $main 'f52c1006-6f87-4e96-955d-0185f8f12c06' '🗣️ Lexicon & Dialogue Color' $lexiconDialogueContent $true
 $gfxVariableSetterContent = '{{setvar::gfx_protocol::' + $gfxModuleContent + '}}{{trim}}'
 $gfxModule = New-PromptModule $main 'f52c1007-6f87-4e96-955d-0185f8f12c07' '🖼️ Pop-In Graphics (Variable Source)' $gfxVariableSetterContent $true
-$accentModule = New-PromptModule $main 'f52c1008-6f87-4e96-955d-0185f8f12c08' '🌀 Precision Cadence Accent (Toggle)' $accentContent $false
+$accentModule = New-PromptModule $main 'f52c1008-6f87-4e96-955d-0185f8f12c08' '🌀 Default Maximalist Narrative Voice' $accentContent $true
 $rpModules = @($sceneModule, $proseModule, $npcModule, $adultModule, $combatGenesisModule, $lexiconDialogueModule, $gfxModule, $accentModule)
 
 $state = Get-Prompt '019f62e8-892f-7027-93ef-159f3d55c410'
