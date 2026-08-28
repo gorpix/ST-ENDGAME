@@ -645,7 +645,7 @@ If completed nontrivial skilled action triggers DND:
 Else skip DND. Fix concrete outcome and immediate state deltas before prose, including post-event affect/residue used by the lens.
 
 4. OUTPUT SPEC
-Record only the final-output constraints: header facts; spotlight; selected action/outcome; 1-3 sensory anchors; narrative-lens targets; voice features; PC-choice yield; applicable adult/combat rules; dialogue color; GFX kind/fields if triggered. Do not write candidate sentences, dialogue lines, paragraphs, artifact text, or a response draft.
+Record only the final-output constraints: header facts; spotlight; selected action/outcome; 1-3 sensory anchors; narrative-lens targets; voice features; PC-choice yield; applicable adult/combat rules; dialogue color; GFX kind/fields if triggered. No dialogue in shape drafting: use only intent/function/tone/information labels; never quote, paraphrase, or rehearse what a character will say. Do not write candidate sentences, dialogue lines, paragraphs, artifact text, or a response draft.
 
 5. CHECK ONCE
 Verify the selected path/spec for autonomy/yield; anti-echo/private-cause; viewpoint/knowledge/attention; persona/goal/VAD; DND; prose requirements/lexicon; header/color/GFX; narrative-to-state consistency. Fix the spec only—do not draft prose, restart, or reconsider.
