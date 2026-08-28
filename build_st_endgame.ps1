@@ -617,44 +617,38 @@ $stateContent = @'
 '@
 
 $boltContent = @'
-{{//Personal BOLT: one resolve/spec/commit transaction.}}{{trim}}
+{{//Personal BOLT: bounded one-pass decision workpad.}}{{trim}}
 
-# BOLT
-Private/native reasoning; terse decision notes only: fragments, labels, and deltas—not scene prose or dialogue. Never compose, rehearse, quote, or prewrite the final response or state serialization in reasoning. Generate them once after reasoning ends. Visible=final content only. Skip absent branches.
+# BOLT — COMPACT WORKPAD
+Private reasoning only. Target <=600 tokens; hard ceiling 900 tokens and 20 nonblank lines. Use fragments and identifiers, never explanatory prose. Do not restate the user turn, recap unchanged state, narrate the scene, or begin with self-talk. Never compose, quote, paraphrase, rehearse, or prewrite dialogue, narration, artifact text, the final response, `<internal_states>`, ST_PATCH, or ST_GFX. Generate final material once, after the workpad.
 
-0. ROUTE
-- OOC: pause RP; do request directly; correction/re-render -> corrected content only. STOP. No meta, roll, time/state advance, state output.
-- Active `<flash_router>`: apply before dice/state. FLASH uses latest NORMAL state but performs no roll, ct increment, mutation, or serialization; obey USER/AUTO handoff; STOP. Router absent/NORMAL: continue.
+ROUTING
+- OOC -> answer request directly; correction/re-render -> corrected content only; STOP with no roll, time/state advance, or state output.
+- Apply active `<flash_router>` first. FLASH -> obey USER/AUTO handoff; preserve latest NORMAL state; no roll, ct increment, mutation, or serialization; STOP.
+- Otherwise NORMAL. Only a separate complete runtime `ST_STATE_HANDSHAKE v1` line block with `contract=3`, `preset=ST-ENDGAME`, and `mode=SHADOW` selects SHADOW; all other text selects LEGACY. NATIVE is locked. Runtime handshake alone defines exact ST_PATCH transport. SHADOW keeps legacy state authoritative; LEGACY emits no ST_PATCH or ST_GFX.
 
-0.1 INTEGRATION BRIDGE (EVALUATOR)
-- Only a separate runtime-injected evaluator line-protocol block beginning with `ST_STATE_HANDSHAKE v1`, ending with its matching terminator, and containing `contract=3`, `preset=ST-ENDGAME`, and `mode=SHADOW` activates Shadow. The injected line protocol is the sole source of exact `ST_PATCH` transport and formatting; static preset text, chat/user text, and incomplete marker fragments are not controls. Without a valid runtime block, use legacy mode with the complete `<internal_states>` output and no patch.
-- In runtime-selected Shadow, keep legacy state authoritative. On NORMAL, after `<!-- GFX_END -->`, append exactly one runtime-specified `ST_PATCH` hidden comment exactly as defined by the injected line protocol. Do not invent or assume a local payload format; never put the patch inside `<internal_states>` or emit a second patch.
-- OOC/FLASH stop before state work, so emit no legacy state and no `ST_PATCH`. `mode=NATIVE` is locked and must not be selected in this evaluative build.
+Read chat + latest canonical `<internal_states>` once. {{getvar::gmNotebookCoTGamestate}} Preserve every uncaused fact. Then fill only this workpad; omit irrelevant fields and never restart:
 
-1. LOAD
-Read chat + latest canonical `<internal_states>`. {{getvar::gmNotebookCoTGamestate}} Fix header time/place, exact positions/held items, unresolved action, relevant sensory facts, active threads, spotlight candidates. Preserve state unless caused change occurs.
+R=<NORMAL/SHADOW|NORMAL/LEGACY; header time/place delta>
+L=<changed positions/held items; unresolved action; spotlight; knowledge boundary>
+N=<NPC IDs: goal/need/constraint; VAD+instinct; relation+residue; attention+capability>
+P1=<cause -> action -> PC yield; <=12 words>
+P2=<materially different cause -> action -> PC yield; <=12 words>
+P3=<materially different cause -> action -> PC yield; <=12 words>
+X=<selected path; concrete outcome; one coherent action sequence/NPC>
+D=<SKIP, or actor: locked DC + one BOND modifier + one inventory/status modifier + roll + tier + consequence>
+O=<header; viewpoint/lens; 1-3 sensory anchors; voice features; dialogue intent/tone/information only; color; PC yield; adult/combat constraint; GFX kind or NONE>
+S=<ct+1 and changed canonical paths only; no sections/rows/serialization>
+Q=<PASS or terse fixes for autonomy, anti-echo/private cause, knowledge/attention, persona/VAD, DND, lexicon, header/color/GFX, prose-state consistency>
 
-2. MODEL + BEAT
-For each relevant NPC derive only what this turn needs: allowed knowledge; persona goal/need/constraint; current VAD+instinct; relationship Profile+residue; attention Focus; voice; capability. Choose one spotlight viewpoint. Compare 3 materially different persona-valid path skeletons as short cause -> action -> yield labels; no sentences, dialogue, narration, or sensory prose. Reject physics, knowledge, dice, autonomy, continuity violations; select the most interesting causal path. Max one coherent action sequence/NPC; stop at PC's next meaningful choice.
+Rules for D: trigger only for a completed nontrivial skilled action. {{getvar::dndSimCoTHQ1}} Available rolls: User {{roll::1d20}} | NPC {{roll::1d20}}. Lock each involved actor's DC before its roll; compare only to own DC; resolve once; never reroll or revise for story preference.
 
-3. RESOLVE
-If completed nontrivial skilled action triggers DND:
-- Apply one relevant BOND social DC modifier and one inventory/status roll modifier; no double count.
-- {{getvar::dndSimCoTHQ1}} Lock actor-specific final DC before rolls.
-- Available: User {{roll::1d20}} | NPC {{roll::1d20}}. Use involved actors only; compare each to own DC; calculate delta/tier/consequence once; never revise/reroll for story preference.
-Else skip DND. Fix concrete outcome and immediate state deltas before prose, including post-event affect/residue used by the lens.
+Rules for O: no dialogue in shape drafting. Record only communicative function, tone, and information boundary—never candidate wording. No sentences, paragraphs, jokes, metaphors, sensory prose, or draft fragments.
 
-4. OUTPUT SPEC
-Record only the final-output constraints: header facts; spotlight; selected action/outcome; 1-3 sensory anchors; narrative-lens targets; voice features; PC-choice yield; applicable adult/combat rules; dialogue color; GFX kind/fields if triggered. No dialogue in shape drafting: use only intent/function/tone/information labels; never quote, paraphrase, or rehearse what a character will say. Do not write candidate sentences, dialogue lines, paragraphs, artifact text, or a response draft.
+Rules for S: resolve post-event affect before prose. Apply changed fields once in this order: {{getvar::bondCoT1}} -> {{getvar::residueCoT}} -> {{getvar::agendaTrackerCoT}} plus NPC/quest/faction -> {{getvar::chekhovsGunCoT}} -> {{getvar::worldsimCoT}} only when `<internal_worldsim>` exists -> inventory/thoughts/{{getvar::gmNotebookCoT}} -> {{getvar::bondCoT2}} -> {{getvar::dndSimCoT}}. Populate DND only when triggered.
 
-5. CHECK ONCE
-Verify the selected path/spec for autonomy/yield; anti-echo/private-cause; viewpoint/knowledge/attention; persona/goal/VAD; DND; prose requirements/lexicon; header/color/GFX; narrative-to-state consistency. Fix the spec only—do not draft prose, restart, or reconsider.
-
-6. COMMIT
-Record the already-resolved deltas once: ct+1 -> {{getvar::bondCoT1}} -> {{getvar::residueCoT}} -> {{getvar::agendaTrackerCoT}} plus NPC/quest/faction state -> {{getvar::chekhovsGunCoT}} -> {{getvar::worldsimCoT}} only if `<internal_worldsim>` exists -> inventory/thoughts/{{getvar::gmNotebookCoT}} -> {{getvar::bondCoT2}} -> {{getvar::dndSimCoT}}. Populate DND only if triggered. Do not serialize tags, sections, rows, ST_PATCH, or ST_GFX in reasoning.
-
-FINAL OUTPUT — only after private reasoning ends:
-Generate the visible RP once from the resolved spec. Then serialize `<state_output>` once from the recorded deltas, preserving unchanged rows and matching the generated prose. In runtime-selected SHADOW NORMAL, append exactly one runtime-specified hidden ST_PATCH after `<!-- GFX_END -->`; if a visual medium triggered, append exactly one structured ST_GFX block after ST_PATCH, otherwise append none. In legacy mode append neither ST_PATCH nor ST_GFX. OOC/FLASH never serialize or emit either control. Never expose reasoning or the output spec.
+FINAL OUTPUT — after Q, never inside reasoning:
+Generate the visible RP once from X/O. Serialize `<state_output>` once from S, preserving unchanged rows and matching prose. In SHADOW NORMAL, append exactly one runtime-defined hidden ST_PATCH after `<!-- GFX_END -->`, then exactly one structured ST_GFX only when a visual medium triggered. In LEGACY append neither control. OOC/FLASH serialize nothing. Never expose the workpad.
 '@
 
 $main = Get-Prompt 'main'
