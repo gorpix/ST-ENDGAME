@@ -620,7 +620,7 @@ $boltContent = @'
 {{//Personal BOLT: bounded one-pass decision workpad.}}{{trim}}
 
 # BOLT — COMPACT WORKPAD
-Private reasoning only. Target <=600 tokens; hard ceiling 900 tokens and 20 nonblank lines. Use fragments and identifiers, never explanatory prose. Do not restate the user turn, recap unchanged state, narrate the scene, or begin with self-talk. Never compose, quote, paraphrase, rehearse, or prewrite dialogue, narration, artifact text, the final response, `<internal_states>`, ST_PATCH, or ST_GFX. Generate final material once, after the workpad.
+Private reasoning only. Target <=600 tokens; hard ceiling 900 tokens and 20 nonblank lines. Use fragments and identifiers, never explanatory prose. Write each workpad entry as plain `LABEL: value`; never wrap reasoning in angle brackets, XML, or HTML because angle brackets are reserved for final transport. Do not restate the user turn, recap unchanged state, narrate the scene, or begin with self-talk. Never compose, quote, paraphrase, rehearse, or prewrite dialogue, narration, artifact text, the final response, `<internal_states>`, ST_PATCH, or ST_GFX. Generate final material once, after the workpad.
 
 ROUTING
 - OOC -> answer request directly; correction/re-render -> corrected content only; STOP with no roll, time/state advance, or state output.
@@ -629,17 +629,17 @@ ROUTING
 
 Read chat + latest canonical `<internal_states>` once. {{getvar::gmNotebookCoTGamestate}} Preserve every uncaused fact. Then fill only this workpad; omit irrelevant fields and never restart:
 
-ROUTE=<NORMAL/SHADOW or NORMAL/LEGACY; header time/place delta>
-SCENE=<changed positions/held items; unresolved action; spotlight; knowledge boundary>
-NPC=<IDs: goal/need/constraint; VAD+instinct; relation+residue; attention+capability>
-PATH_A=<cause -> action -> PC yield; <=12 words>
-PATH_B=<materially different cause -> action -> PC yield; <=12 words>
-PATH_C=<materially different cause -> action -> PC yield; <=12 words>
-PICK=<selected path; concrete outcome; one coherent action sequence/NPC>
-ROLL=<SKIP, or actor: locked DC + one BOND modifier + one inventory/status modifier + roll + tier + consequence>
-SHAPE=<header; viewpoint/lens; 1-3 sensory anchors; voice features; dialogue intent/tone/information only; color; PC yield; adult/combat constraint; GFX kind or NONE>
-STATE=<ct+1 and changed canonical paths only; no sections/rows/serialization>
-CHECK=<PASS or terse fixes for autonomy, anti-echo/private cause, knowledge/attention, persona/VAD, DND, lexicon, header/color/GFX, prose-state consistency>
+ROUTE: NORMAL/SHADOW or NORMAL/LEGACY; header time/place delta
+SCENE: changed positions/held items; unresolved action; spotlight; knowledge boundary
+NPC: IDs; goal/need/constraint; VAD+instinct; relation+residue; attention+capability
+PATH_A: cause -> action -> PC yield; <=12 words
+PATH_B: materially different cause -> action -> PC yield; <=12 words
+PATH_C: materially different cause -> action -> PC yield; <=12 words
+PICK: selected path; concrete outcome; one coherent action sequence/NPC
+ROLL: SKIP, or actor; locked DC; one BOND modifier; one inventory/status modifier; roll; tier; consequence
+SHAPE: header; viewpoint/lens; 1-3 sensory anchors; voice features; dialogue intent/tone/information only; color; PC yield; adult/combat constraint; GFX kind or NONE
+STATE: ct+1 and changed canonical paths only; no sections/rows/serialization
+CHECK: PASS or terse fixes for autonomy, anti-echo/private cause, knowledge/attention, persona/VAD, DND, lexicon, header/color/GFX, prose-state consistency
 
 Rules for ROLL: trigger only for a completed nontrivial skilled action. {{getvar::dndSimCoTHQ1}} Available rolls: User {{roll::1d20}} | NPC {{roll::1d20}}. Lock each involved actor's DC before its roll; compare only to own DC; resolve once; never reroll or revise for story preference.
 
