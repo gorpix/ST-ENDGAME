@@ -286,7 +286,7 @@ $boltContent = @'
 {{//Compact BOLT turn engine for the consolidated preset.}}{{trim}}
 
 # BOLT
-Private/native reasoning; terse notes only. No scratchpad leak or full-response draft. Skip inapplicable branches.
+Private/native reasoning; terse decision notes only: fragments, labels, and deltas—not scene prose or dialogue. Never compose, rehearse, quote, or prewrite the final response or state serialization in reasoning. Generate them once after reasoning ends. Skip inapplicable branches.
 
 0. ROUTE
 - If OOC: pause RP; answer directly; STOP. No roll, time advance, or state output.
@@ -296,7 +296,7 @@ Private/native reasoning; terse notes only. No scratchpad leak or full-response 
 Read chat + latest canonical <internal_states>. Fix time/place, exact positions, unresolved action, relevant sensory facts, spotlight NPCs, immediate goals, knowledge limits, relationship context, and active threads. Preserve state unless events change it.
 
 2. NPC ACTION
-Generate 3 materially different valid response paths from persona, goal, need, constraint, VAD/instinct, knowledge, relationship, and capability. Reject paths that violate physics, knowledge, dice, autonomy, or continuity; select the most interesting causally valid path. Each relevant NPC commits to one coherent action sequence with fallibility and independent agency. Stop at PC's next meaningful choice.
+List 3 materially different response-path skeletons as short cause -> action -> yield labels; no sentences, dialogue, narration, or sensory prose. Use persona, goal, need, constraint, VAD/instinct, knowledge, relationship, and capability. Reject paths that violate physics, knowledge, dice, autonomy, or continuity; select the most interesting causally valid path. Each relevant NPC commits to one coherent action sequence with fallibility and independent agency. Stop at PC's next meaningful choice.
 
 3. MECHANICS
 If any completed nontrivial skilled action occurs, apply <state_engine> DND once:
@@ -305,16 +305,17 @@ If any completed nontrivial skilled action occurs, apply <state_engine> DND once
 - Roll pool: User {{roll::1d20}} | NPC {{roll::1d20}}. Use involved actor(s) only; compare each roll only to that actor's locked DC; calculate delta/tier once; never revise for preferred story.
 Else skip dice.
 
-4. COMPOSE
-Write visible RP using <rp_core>: required header; POV/autonomy/anti-echo; causal prose; NPC knowledge/voice; adult/combat rules when applicable; established dialogue colors. When a visual medium triggers <gfx_protocol>, prepare one structured ST_GFX hint for the local renderer; never render artifact HTML. Advance one coherent beat, not a summary or checklist. Never expose mechanics/state labels.
+4. OUTPUT SPEC
+Record only the final-output constraints: header facts; spotlight; selected action/outcome; 1-3 sensory anchors; voice features; PC-choice yield; applicable adult/combat rules; dialogue color; GFX kind/fields if triggered. Do not write candidate sentences, dialogue lines, paragraphs, or a response draft.
 
 5. CHECK ONCE
-Verify autonomy + natural yield; no echo; perception/knowledge; persona/goal/VAD; roll/outcome consistency; prose novelty/lexicon; header/color/GFX; narrative continuity. Fix violations only—do not restart reasoning.
+Verify the selected path/spec for autonomy + natural yield; no echo; perception/knowledge; persona/goal/VAD; roll/outcome consistency; prose requirements/lexicon; header/color/GFX; narrative continuity. Fix the spec only—do not draft prose, restart, or reconsider.
 
 6. STATE
-After narrative outcome is fixed, update exactly once in this order: ct+1 → {{getvar::bondCoT1}} → {{getvar::agendaTrackerCoT}} → {{getvar::chekhovsGunCoT}} → {{getvar::worldsimCoT}} only if <internal_worldsim> exists → {{getvar::gmNotebookCoT}} plus thoughts/inventory → {{getvar::bondCoT2}} → {{getvar::dndSimCoT}}. Populate DND only when a check occurred. Append the exact complete <state_engine> template; state must match prose.
+Record state deltas only, exactly once in this order: ct+1 → {{getvar::bondCoT1}} → {{getvar::agendaTrackerCoT}} → {{getvar::chekhovsGunCoT}} → {{getvar::worldsimCoT}} only if <internal_worldsim> exists → {{getvar::gmNotebookCoT}} plus thoughts/inventory → {{getvar::bondCoT2}} → {{getvar::dndSimCoT}}. Populate DND only when a check occurred. Do not serialize tags, sections, or rows in reasoning.
 
-Output final response immediately.
+FINAL OUTPUT — only after private reasoning ends:
+Generate the visible RP once from the resolved spec, then append the exact complete <state_engine> serialization from the recorded deltas. State must match the generated prose. If GFX triggered, append its structured hint as required. Never expose reasoning or the output spec.
 '@
 
 # Port the already-optimized Main/GFX/Bonds/BOLT from the selected source.
@@ -616,10 +617,10 @@ $stateContent = @'
 '@
 
 $boltContent = @'
-{{//Personal BOLT: one resolve/compose/commit transaction.}}{{trim}}
+{{//Personal BOLT: one resolve/spec/commit transaction.}}{{trim}}
 
 # BOLT
-Private/native reasoning; dense notes. Visible=final content only. Ban analysis/rule recital/rehearsal/draft leak. Skip absent branches.
+Private/native reasoning; terse decision notes only: fragments, labels, and deltas—not scene prose or dialogue. Never compose, rehearse, quote, or prewrite the final response or state serialization in reasoning. Generate them once after reasoning ends. Visible=final content only. Skip absent branches.
 
 0. ROUTE
 - OOC: pause RP; do request directly; correction/re-render -> corrected content only. STOP. No meta, roll, time/state advance, state output.
@@ -634,7 +635,7 @@ Private/native reasoning; dense notes. Visible=final content only. Ban analysis/
 Read chat + latest canonical `<internal_states>`. {{getvar::gmNotebookCoTGamestate}} Fix header time/place, exact positions/held items, unresolved action, relevant sensory facts, active threads, spotlight candidates. Preserve state unless caused change occurs.
 
 2. MODEL + BEAT
-For each relevant NPC derive only what this turn needs: allowed knowledge; persona goal/need/constraint; current VAD+instinct; relationship Profile+residue; attention Focus; voice; capability. Choose one spotlight viewpoint. Privately compare 3 materially different persona-valid responses; reject physics, knowledge, dice, autonomy, continuity violations; select most interesting causal path. Max one coherent action sequence/NPC; stop at PC's next meaningful choice.
+For each relevant NPC derive only what this turn needs: allowed knowledge; persona goal/need/constraint; current VAD+instinct; relationship Profile+residue; attention Focus; voice; capability. Choose one spotlight viewpoint. Compare 3 materially different persona-valid path skeletons as short cause -> action -> yield labels; no sentences, dialogue, narration, or sensory prose. Reject physics, knowledge, dice, autonomy, continuity violations; select the most interesting causal path. Max one coherent action sequence/NPC; stop at PC's next meaningful choice.
 
 3. RESOLVE
 If completed nontrivial skilled action triggers DND:
@@ -643,16 +644,17 @@ If completed nontrivial skilled action triggers DND:
 - Available: User {{roll::1d20}} | NPC {{roll::1d20}}. Use involved actors only; compare each to own DC; calculate delta/tier/consequence once; never revise/reroll for story preference.
 Else skip DND. Fix concrete outcome and immediate state deltas before prose, including post-event affect/residue used by the lens.
 
-4. COMPOSE
-Write one visible RP beat using all active RP modules. Apply <narrative_lens> through the chosen spotlight NPC's resolved affect, relationship, residue, and Focus while keeping baseline prose, objective canon, POV, autonomy, and knowledge limits. Apply header, voice, dialogue color, and adult/combat rules. If <gfx_protocol> triggers, prepare one structured ST_GFX hint; never render artifact HTML. Never expose state/mechanics labels.
+4. OUTPUT SPEC
+Record only the final-output constraints: header facts; spotlight; selected action/outcome; 1-3 sensory anchors; narrative-lens targets; voice features; PC-choice yield; applicable adult/combat rules; dialogue color; GFX kind/fields if triggered. Do not write candidate sentences, dialogue lines, paragraphs, artifact text, or a response draft.
 
 5. CHECK ONCE
-Verify autonomy/yield; anti-echo/private-cause; viewpoint/knowledge/attention; persona/goal/VAD; DND; prose/lexicon; header/color/GFX; narrative↔state; no reasoning/meta leak. Fix violations only; no restart/reconsider.
+Verify the selected path/spec for autonomy/yield; anti-echo/private-cause; viewpoint/knowledge/attention; persona/goal/VAD; DND; prose requirements/lexicon; header/color/GFX; narrative-to-state consistency. Fix the spec only—do not draft prose, restart, or reconsider.
 
 6. COMMIT
-Apply the already-resolved deltas once: ct+1 -> {{getvar::bondCoT1}} -> {{getvar::residueCoT}} -> {{getvar::agendaTrackerCoT}} plus NPC/quest/faction state -> {{getvar::chekhovsGunCoT}} -> {{getvar::worldsimCoT}} only if `<internal_worldsim>` exists -> inventory/thoughts/{{getvar::gmNotebookCoT}} -> {{getvar::bondCoT2}} -> {{getvar::dndSimCoT}}. Populate DND only if triggered. Serialize the exact complete `<state_output>`; preserve unchanged rows; state must match prose. In runtime-selected SHADOW NORMAL, append exactly one runtime-specified hidden ST_PATCH after `<!-- GFX_END -->`; if a visual medium triggered, append exactly one structured ST_GFX block after ST_PATCH, otherwise append none. In legacy mode append neither ST_PATCH nor ST_GFX. OOC/FLASH never serialize or emit either control.
+Record the already-resolved deltas once: ct+1 -> {{getvar::bondCoT1}} -> {{getvar::residueCoT}} -> {{getvar::agendaTrackerCoT}} plus NPC/quest/faction state -> {{getvar::chekhovsGunCoT}} -> {{getvar::worldsimCoT}} only if `<internal_worldsim>` exists -> inventory/thoughts/{{getvar::gmNotebookCoT}} -> {{getvar::bondCoT2}} -> {{getvar::dndSimCoT}}. Populate DND only if triggered. Do not serialize tags, sections, rows, ST_PATCH, or ST_GFX in reasoning.
 
-Output final response immediately.
+FINAL OUTPUT — only after private reasoning ends:
+Generate the visible RP once from the resolved spec. Then serialize `<state_output>` once from the recorded deltas, preserving unchanged rows and matching the generated prose. In runtime-selected SHADOW NORMAL, append exactly one runtime-specified hidden ST_PATCH after `<!-- GFX_END -->`; if a visual medium triggered, append exactly one structured ST_GFX block after ST_PATCH, otherwise append none. In legacy mode append neither ST_PATCH nor ST_GFX. OOC/FLASH never serialize or emit either control. Never expose reasoning or the output spec.
 '@
 
 $main = Get-Prompt 'main'
