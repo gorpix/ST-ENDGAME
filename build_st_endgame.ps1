@@ -629,26 +629,26 @@ ROUTING
 
 Read chat + latest canonical `<internal_states>` once. {{getvar::gmNotebookCoTGamestate}} Preserve every uncaused fact. Then fill only this workpad; omit irrelevant fields and never restart:
 
-R=<NORMAL/SHADOW|NORMAL/LEGACY; header time/place delta>
-L=<changed positions/held items; unresolved action; spotlight; knowledge boundary>
-N=<NPC IDs: goal/need/constraint; VAD+instinct; relation+residue; attention+capability>
-P1=<cause -> action -> PC yield; <=12 words>
-P2=<materially different cause -> action -> PC yield; <=12 words>
-P3=<materially different cause -> action -> PC yield; <=12 words>
-X=<selected path; concrete outcome; one coherent action sequence/NPC>
-D=<SKIP, or actor: locked DC + one BOND modifier + one inventory/status modifier + roll + tier + consequence>
-O=<header; viewpoint/lens; 1-3 sensory anchors; voice features; dialogue intent/tone/information only; color; PC yield; adult/combat constraint; GFX kind or NONE>
-S=<ct+1 and changed canonical paths only; no sections/rows/serialization>
-Q=<PASS or terse fixes for autonomy, anti-echo/private cause, knowledge/attention, persona/VAD, DND, lexicon, header/color/GFX, prose-state consistency>
+ROUTE=<NORMAL/SHADOW or NORMAL/LEGACY; header time/place delta>
+SCENE=<changed positions/held items; unresolved action; spotlight; knowledge boundary>
+NPC=<IDs: goal/need/constraint; VAD+instinct; relation+residue; attention+capability>
+PATH_A=<cause -> action -> PC yield; <=12 words>
+PATH_B=<materially different cause -> action -> PC yield; <=12 words>
+PATH_C=<materially different cause -> action -> PC yield; <=12 words>
+PICK=<selected path; concrete outcome; one coherent action sequence/NPC>
+ROLL=<SKIP, or actor: locked DC + one BOND modifier + one inventory/status modifier + roll + tier + consequence>
+SHAPE=<header; viewpoint/lens; 1-3 sensory anchors; voice features; dialogue intent/tone/information only; color; PC yield; adult/combat constraint; GFX kind or NONE>
+STATE=<ct+1 and changed canonical paths only; no sections/rows/serialization>
+CHECK=<PASS or terse fixes for autonomy, anti-echo/private cause, knowledge/attention, persona/VAD, DND, lexicon, header/color/GFX, prose-state consistency>
 
-Rules for D: trigger only for a completed nontrivial skilled action. {{getvar::dndSimCoTHQ1}} Available rolls: User {{roll::1d20}} | NPC {{roll::1d20}}. Lock each involved actor's DC before its roll; compare only to own DC; resolve once; never reroll or revise for story preference.
+Rules for ROLL: trigger only for a completed nontrivial skilled action. {{getvar::dndSimCoTHQ1}} Available rolls: User {{roll::1d20}} | NPC {{roll::1d20}}. Lock each involved actor's DC before its roll; compare only to own DC; resolve once; never reroll or revise for story preference.
 
-Rules for O: no dialogue in shape drafting. Record only communicative function, tone, and information boundary—never candidate wording. No sentences, paragraphs, jokes, metaphors, sensory prose, or draft fragments.
+Rules for SHAPE: no dialogue in shape drafting. Record only communicative function, tone, and information boundary—never candidate wording. No sentences, paragraphs, jokes, metaphors, sensory prose, or draft fragments.
 
-Rules for S: resolve post-event affect before prose. Apply changed fields once in this order: {{getvar::bondCoT1}} -> {{getvar::residueCoT}} -> {{getvar::agendaTrackerCoT}} plus NPC/quest/faction -> {{getvar::chekhovsGunCoT}} -> {{getvar::worldsimCoT}} only when `<internal_worldsim>` exists -> inventory/thoughts/{{getvar::gmNotebookCoT}} -> {{getvar::bondCoT2}} -> {{getvar::dndSimCoT}}. Populate DND only when triggered.
+Rules for STATE: resolve post-event affect before prose. Apply changed fields once in this order: {{getvar::bondCoT1}} -> {{getvar::residueCoT}} -> {{getvar::agendaTrackerCoT}} plus NPC/quest/faction -> {{getvar::chekhovsGunCoT}} -> {{getvar::worldsimCoT}} only when `<internal_worldsim>` exists -> inventory/thoughts/{{getvar::gmNotebookCoT}} -> {{getvar::bondCoT2}} -> {{getvar::dndSimCoT}}. Populate DND only when triggered.
 
-FINAL OUTPUT — after Q, never inside reasoning:
-Generate the visible RP once from X/O. Serialize `<state_output>` once from S, preserving unchanged rows and matching prose. In SHADOW NORMAL, append exactly one runtime-defined hidden ST_PATCH after `<!-- GFX_END -->`, then exactly one structured ST_GFX only when a visual medium triggered. In LEGACY append neither control. OOC/FLASH serialize nothing. Never expose the workpad.
+FINAL OUTPUT — after CHECK, never inside reasoning:
+Generate the visible RP once from PICK/SHAPE. Serialize `<state_output>` once from STATE, preserving unchanged rows and matching prose. In SHADOW NORMAL, append exactly one runtime-defined hidden ST_PATCH after `<!-- GFX_END -->`, then exactly one structured ST_GFX only when a visual medium triggered. In LEGACY append neither control. OOC/FLASH serialize nothing. Never expose the workpad.
 '@
 
 $main = Get-Prompt 'main'
