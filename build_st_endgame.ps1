@@ -1,7 +1,8 @@
 param(
   [Parameter(Mandatory=$true)][string]$Source,
   [Parameter(Mandatory=$true)][string]$Output,
-  [string]$RegexOutput
+  [string]$RegexOutput,
+  [string]$ActiveSettings
 )
 
 $ErrorActionPreference = 'Stop'
@@ -56,10 +57,10 @@ Scene/NPCs: third-person limited. PC bodily sensations/results: second person. F
 
 <prose_rules>
 <voice>
-- Every NORMAL RP turn: DFW-esque maximalist observation. No generic cinematic, storybook, purple, or neutral RP prose.
-- Use humane comic scrutiny; recursive syntax; parenthetical self-interruption; exact physical detail; status, etiquette, logistics, institutional language, bodily management, and private rationalization.
-- Concrete detail -> motive/self-deception/system/consequence -> scene. Long elastic sentence -> short landing. Mix plain bodily language with exact technical, bureaucratic, commercial, or Latinate diction. Lists, recurrence, footnote-minded asides; no actual footnotes.
-- Digression must reveal character, pressure, or causality. Stay inside spotlight knowledge. No detached essay, diagnosis, empty cleverness, or action replacement.
+- Every NORMAL RP turn uses maximalist, psychologically observant comic realism: exact concrete details accumulate into character, social pressure, systems, and consequence. No generic cinematic, storybook, purple, or neutral RP prose.
+- Examine people with humane but unsparing comic scrutiny. Use long, recursively branching sentences with controlled parenthetical interruptions, balanced by short blunt landings. Track status, etiquette, logistics, institutional language, bodily management, and private rationalization.
+- Move from concrete detail -> motive or self-deception -> social/systemic pressure -> consequence -> scene action. Mix plain bodily language with precise technical, bureaucratic, commercial, or Latinate diction. Use lists, recurrence, and footnote-minded asides, but no actual footnotes.
+- Digress only when the digression reveals character, pressure, or causality, then return to the active scene. Stay inside spotlight knowledge. No detached essay, diagnosis, empty cleverness, or replacement of action with commentary.
 </voice>
 <craft>
 - Use complete sentences and fluid paragraphs. Most narrative paragraphs: one controlled branching observation; then action, sensation, dialogue, consequence, or a short blunt landing. Choose one concrete interpretation and state it as fact.
@@ -78,7 +79,7 @@ Scene/NPCs: third-person limited. PC bodily sensations/results: second person. F
 </prose_rules>
 
 <narrative_lens>
-- Keep the default DFW-esque voice. Filter through spotlight NPC feelings, VAD, instincts, relationship, and residue; shape attention, senses, cadence, distance, certainty, and detail.
+- Keep this maximalist observational voice. Filter it through spotlight NPC feelings, VAD, instincts, relationship, and residue; shape attention, senses, cadence, distance, certainty, and detail.
 - This colors perception only: preserve canon, POV, knowledge limits, and user autonomy. Use one spotlight viewpoint at a time; switch only at a clear scene or viewpoint transition.
 </narrative_lens>
 
@@ -334,6 +335,26 @@ $sourceStatePrompt = $preset.prompts | Where-Object identifier -eq '019f62e8-892
 $sourceBondsPrompt = $preset.prompts | Where-Object identifier -eq '019f62e8-892f-7023-825d-9351eca0347f' | Select-Object -First 1
 $sourceAgendaPrompt = $preset.prompts | Where-Object identifier -eq '019f67b4-7381-7000-bcc4-496b2e6ed920' | Select-Object -First 1
 $sourceBoltPrompt = $preset.prompts | Where-Object identifier -eq '634ecfec-1862-4ce0-821e-e31057acadfa' | Select-Object -First 1
+$boltSourceLabel = $Source
+if (-not $ActiveSettings) {
+  $sourceDirectory = Split-Path -Parent ([IO.Path]::GetFullPath($Source))
+  if ((Split-Path -Leaf $sourceDirectory) -eq 'OpenAI Settings') {
+    $candidateSettings = Join-Path (Split-Path -Parent $sourceDirectory) 'settings.json'
+    if (Test-Path -LiteralPath $candidateSettings) { $ActiveSettings = $candidateSettings }
+  }
+}
+if ($ActiveSettings) {
+  $activeDocument = Get-Content -LiteralPath $ActiveSettings -Raw | ConvertFrom-Json -Depth 100
+  $activePresetName = [string]$activeDocument.preset_settings_openai
+  $sourcePresetName = [IO.Path]::GetFileNameWithoutExtension($Source)
+  if ($activePresetName -and $activePresetName -ne $sourcePresetName) {
+    throw "Active settings select '$activePresetName', not source preset '$sourcePresetName'"
+  }
+  $activeBoltPrompt = $activeDocument.oai_settings.prompts | Where-Object identifier -eq '634ecfec-1862-4ce0-821e-e31057acadfa' | Select-Object -First 1
+  if (-not $activeBoltPrompt -or -not $activeBoltPrompt.content) { throw 'Missing active BOLT prompt in settings.json' }
+  $sourceBoltPrompt = $activeBoltPrompt
+  $boltSourceLabel = $ActiveSettings
+}
 if ($sourceGfxPrompt) {
   $sourceGfxContent = Remove-PromptComments $sourceGfxPrompt.content
 } else {
@@ -359,9 +380,11 @@ if ($sourceAgendaPrompt) {
   $sourceAgendaContent = ''
 }
 if ($sourceBoltPrompt) {
-  $sourceBoltContent = Remove-PromptComments $sourceBoltPrompt.content
+  # BOLT is user-edited in the working preset. Keep that prompt byte-for-byte
+  # instead of normalizing comments or replacing it with a second embedded copy.
+  $sourceBoltContent = [string]$sourceBoltPrompt.content
 } else {
-  $sourceBoltContent = ''
+  throw 'Missing BOLT prompt in source preset'
 }
 
 # GFX example is demonstration, not behavior; the full protocol/CSS/media library remains.
@@ -473,8 +496,6 @@ $stateContent = [regex]::Replace($stateContent, '(?m)^NOTEBOOK:$', "</internal_n
 $stateContent = [regex]::Replace($stateContent, '(?m)^STATE OUTPUT:$', "</internal_gmnotebook>`n`nSTATE OUTPUT:")
 
 $boltContent = $sourceBoltContent.Trim()
-$boltContent = $boltContent.Replace('persona-consistent goal; VAD; dominant active instinct; relationship context; distinct voice; plausible action.', 'persona-consistent goal; VAD; dominant active instinct; relationship context; attention filter; distinct voice; plausible action.')
-$boltContent = [regex]::Replace($boltContent, '(\{\{getvar::bondCoT1\}\})\r?\n(\{\{getvar::agendaTrackerCoT\}\})', { param($m) "$($m.Groups[1].Value)`n{{getvar::residueCoT}}`n$($m.Groups[2].Value)" })
 
 # Personal unified state engine. This final assignment is authoritative; source
 # modules above serve only as parity inputs while the personal schema stays whole.
@@ -501,6 +522,7 @@ $stateContent = @'
 <state_contract>
 - Latest complete `<internal_states>` is canonical. NORMAL only: fix visible outcome, increment ct once, apply each caused delta once, preserve unchanged facts, serialize every section. OOC/FLASH: no roll, time/state mutation, or serialization; latest NORMAL state persists.
 - State is machine memory, not narration. Store facts/active mechanics only; no recaps, prose, guessed knowledge, duplicated data, or labels/numbers in visible RP. Use `None` for empty sections. Update off-screen VAD/Focus only when an event reaches that NPC; otherwise preserve them.
+- Maintain one compact `{{user}}` actor row containing only At, Doing, Circle, and Body. At records established current location/position, Doing records the PC's enacted/current activity, Body records established physical condition and carried/worn/held facts, and Circle records established affiliations/allies. Never infer PC thoughts, emotions, intent, goals, agenda, VAD, focus, awareness, or lies.
 - Commit order: relationship harm/profile/VAD -> residue/milestones -> NPC state/agendas/locations/quests/factions -> Chekhov -> optional World Sim -> inventory/thoughts/notebook -> Sparks/BOND -> DND log -> render.
 </state_contract>
 
@@ -569,13 +591,14 @@ $stateContent = @'
 </internal_gmnotebook>
 
 <state_output>
-- Append every NORMAL response, never OOC/FLASH. Raw HTML, no markdown fence. Preserve wrapper, summary titles, field labels, legacy relationship row. One concise row/item; `None` if empty. US: NPC→US Profile only. NPC pairs: reverse row only if useful/asymmetric. Brackets describe values; never print instructions/placeholders.
+- Append every NORMAL response, never OOC/FLASH. Raw HTML, no markdown fence. Preserve wrapper, summary titles, field labels, legacy relationship row. One concise row/item; `None` if empty. Always include the compact `{{user}}` row; never add NPC-only fields to it. US relationships: NPC→US Profile only. NPC pairs: reverse row only if useful/asymmetric. Brackets describe values; never print instructions/placeholders.
 
 <!-- GFX_START -->
 <internal_states>
 <details><summary>🎬 INTERNAL STATES (Turn: [ct])</summary>
 
 <details><summary>👥 NPC STATE</summary>
+- <b>{{user}}</b> | At: [established current location/position] | Doing: [enacted/current activity] | Circle: [established allies/affiliations] | Body: [physical condition; carried/worn/held facts]
 - <b>[NPC]</b> | At: [location/position] | Doing: [activity] | Agenda: [goal; step/max] | VAD: [valence/arousal/dominance] | Focus: [1-3 noticed cues] | Aware: [known] | Fibs: [lies] | Circle: [allies] | Body: [condition/items]
 </details>
 
@@ -616,41 +639,6 @@ $stateContent = @'
 </state_engine>
 '@
 
-$boltContent = @'
-{{//Personal BOLT: bounded one-pass decision workpad.}}{{trim}}
-
-# BOLT — COMPACT WORKPAD
-Private reasoning only. Target <=600 tokens; hard ceiling 900 tokens and 20 nonblank lines. Use fragments and identifiers, never explanatory prose. Write each workpad entry as plain `LABEL: value`; never wrap reasoning in angle brackets, XML, or HTML because angle brackets are reserved for final transport. Do not restate the user turn, recap unchanged state, narrate the scene, or begin with self-talk. Never compose, quote, paraphrase, rehearse, or prewrite dialogue, narration, artifact text, the final response, `<internal_states>`, ST_PATCH, or ST_GFX. Generate final material once, after the workpad.
-
-ROUTING
-- OOC -> answer request directly; correction/re-render -> corrected content only; STOP with no roll, time/state advance, or state output.
-- Apply active `<flash_router>` first. FLASH -> obey USER/AUTO handoff; preserve latest NORMAL state; no roll, ct increment, mutation, or serialization; STOP.
-- Otherwise NORMAL. Only a separate complete runtime `ST_STATE_HANDSHAKE v1` line block with `contract=3`, `preset=ST-ENDGAME`, and `mode=SHADOW` selects SHADOW; all other text selects LEGACY. NATIVE is locked. Runtime handshake alone defines exact ST_PATCH transport. SHADOW keeps legacy state authoritative; LEGACY emits no ST_PATCH or ST_GFX.
-
-Read chat + latest canonical `<internal_states>` once. {{getvar::gmNotebookCoTGamestate}} Preserve every uncaused fact. Then fill only this workpad; omit irrelevant fields and never restart:
-
-ROUTE: NORMAL/SHADOW or NORMAL/LEGACY; header time/place delta
-SCENE: changed positions/held items; unresolved action; spotlight; knowledge boundary
-NPC: IDs; goal/need/constraint; VAD+instinct; relation+residue; attention+capability
-PATH_A: cause -> action -> PC yield; <=12 words
-PATH_B: materially different cause -> action -> PC yield; <=12 words
-PATH_C: materially different cause -> action -> PC yield; <=12 words
-PICK: selected path; concrete outcome; one coherent action sequence/NPC
-ROLL: SKIP, or actor; locked DC; one BOND modifier; one inventory/status modifier; roll; tier; consequence
-SHAPE: header; viewpoint/lens; 1-3 sensory anchors; voice features; dialogue intent/tone/information only; color; PC yield; adult/combat constraint; GFX kind or NONE
-STATE: ct+1 and changed canonical paths only; no sections/rows/serialization
-CHECK: PASS or terse fixes for autonomy, anti-echo/private cause, knowledge/attention, persona/VAD, DND, lexicon, header/color/GFX, prose-state consistency
-
-Rules for ROLL: trigger only for a completed nontrivial skilled action. {{getvar::dndSimCoTHQ1}} Available rolls: User {{roll::1d20}} | NPC {{roll::1d20}}. Lock each involved actor's DC before its roll; compare only to own DC; resolve once; never reroll or revise for story preference.
-
-Rules for SHAPE: no dialogue in shape drafting. Record only communicative function, tone, and information boundary—never candidate wording. No sentences, paragraphs, jokes, metaphors, sensory prose, or draft fragments.
-
-Rules for STATE: resolve post-event affect before prose. Apply changed fields once in this order: {{getvar::bondCoT1}} -> {{getvar::residueCoT}} -> {{getvar::agendaTrackerCoT}} plus NPC/quest/faction -> {{getvar::chekhovsGunCoT}} -> {{getvar::worldsimCoT}} only when `<internal_worldsim>` exists -> inventory/thoughts/{{getvar::gmNotebookCoT}} -> {{getvar::bondCoT2}} -> {{getvar::dndSimCoT}}. Populate DND only when triggered.
-
-FINAL OUTPUT — after CHECK, never inside reasoning:
-Generate the visible RP once from PICK/SHAPE. Serialize `<state_output>` once from STATE, preserving unchanged rows and matching prose. In SHADOW NORMAL, append exactly one runtime-defined hidden ST_PATCH after `<!-- GFX_END -->`, then exactly one structured ST_GFX only when a visual medium triggered. In LEGACY append neither control. OOC/FLASH serialize nothing. Never expose the workpad.
-'@
-
 $main = Get-Prompt 'main'
 $main.name = '⚙️ RP Kernel'
 $main.content = $kernelContent
@@ -666,7 +654,7 @@ function New-PromptModule($Base, [string]$Id, [string]$Name, [string]$Content, [
 }
 
 $sceneModule = New-PromptModule $main 'f52c1001-6f87-4e96-955d-0185f8f12c01' '🎬 Scene, POV & User Autonomy' $sceneContent $true
-$proseModule = New-PromptModule $main 'f52c1002-6f87-4e96-955d-0185f8f12c02' '✒️ Default DFW-Esque Prose & Narrative Lens' $proseContent $true
+$proseModule = New-PromptModule $main 'f52c1002-6f87-4e96-955d-0185f8f12c02' '✒️ Default Maximalist Observational Prose & Narrative Lens' $proseContent $true
 $npcModule = New-PromptModule $main 'f52c1003-6f87-4e96-955d-0185f8f12c03' '🎭 NPC Cognition, Agency & Voice' $npcContent $true
 $adultModule = New-PromptModule $main 'f52c1004-6f87-4e96-955d-0185f8f12c04' '🔞 Adult Mode' $adultContent $true
 $combatGenesisModule = New-PromptModule $main 'f52c1005-6f87-4e96-955d-0185f8f12c05' '⚔️ Combat & NPC Creation' $combatGenesisContent $true
@@ -688,7 +676,9 @@ $flash = Get-Prompt 'a1089ad5-4c04-4101-8796-6342fa677830'
 $flash.name = '⚡ FLASH Mode Router (Toggle)'
 Set-PromptEnabled $flash $true
 
-$boltContent = Join-PromptBlocks @('{{getvar::gfx_protocol}}', $boltContent)
+if ($boltContent -notmatch '^\s*\{\{getvar::gfx_protocol\}\}') {
+  $boltContent = Join-PromptBlocks @('{{getvar::gfx_protocol}}', $boltContent)
+}
 $bolt = Get-Prompt '634ecfec-1862-4ce0-821e-e31057acadfa'
 $bolt.name = '⚡ BOLT Turn Engine'
 $bolt.content = $boltContent
@@ -915,5 +905,6 @@ if ($RegexOutput) {
   Prompts = $preset.prompts.Count
   OrderEntries = $preset.prompt_order[0].order.Count
   RegexScripts = $preset.extensions.regex_scripts.Count
+  BoltSource = $boltSourceLabel
 } | ConvertTo-Json
 
