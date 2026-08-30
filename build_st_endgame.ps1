@@ -395,18 +395,18 @@ $sourceGfxContent = '<gfx_protocol></gfx_protocol>'
 $gfxReliabilityContent = @'
 <gfx_reliability>
 active:thisBlock; unresolved/malformed gfx_protocol ref:ignore,neverDiscuss
-activation:valid runtime-injected ST_STATE_HANDSHAKE with mode=SHADOW; otherwise inactive
+activation:valid runtime-injected ST_STATE_HANDSHAKE with mode=SHADOW or mode=NATIVE; otherwise inactive
 trigger:PC receives,notices,views,reads,opens,or uses an in-world visual medium
 result:prepare one local-renderer hint; never output artifact HTML,CSS,JSON,script,markdown fence,or UI description
 knowledge:include only artifact content visibly available to PC; never expose thoughts,hidden state,private knowledge,or GM data
 legacyWrapper:GFX_START/GFX_END reserved only for complete internal_states; never use it for a visual artifact
-noTrigger:no ST_GFX; no valid Shadow handshake,LEGACY,RECOVERY,OOC,FLASH:no ST_GFX
+noTrigger:no ST_GFX; no valid transactional handshake,LEGACY,RECOVERY,OOC,FLASH:no ST_GFX
 </gfx_reliability>
 '@
 $gfxTransportContent = @'
 <gfx_transport>
 owner:ST-STATE local DOM renderer; advisory display only; never canonical state
-placement:SHADOW NORMAL only, after complete internal_states/GFX_END and ST_PATCH; max one block; final control in response
+placement:SHADOW NORMAL after complete internal_states/GFX_END and ST_PATCH; NATIVE NORMAL after ST_PATCH; max one block; final control in response
 format:
 <!--ST_GFX
 V1
@@ -520,18 +520,18 @@ $stateContent = @'
 
 <state_engine>
 <state_contract>
-- Latest complete `<internal_states>` is canonical. NORMAL only: fix visible outcome, increment ct once, apply each caused delta once, preserve unchanged facts, serialize every section. OOC/FLASH: no roll, time/state mutation, or serialization; latest NORMAL state persists.
+- LEGACY and SHADOW use the latest complete `<internal_states>` as canonical compatibility state. Hybrid NATIVE uses ST-STATE's injected canonical state and authoritative `ST_PATCH`; it emits only changed unsupported compatibility sections when the runtime protocol requests them. NORMAL only: fix visible outcome, increment ct once, apply each caused delta once, and preserve unchanged facts. OOC/FLASH: no roll, time/state mutation, or serialization; latest NORMAL state persists.
 - State is machine memory, not narration. Store facts/active mechanics only; no recaps, prose, guessed knowledge, duplicated data, or labels/numbers in visible RP. Use `None` for empty sections. Update off-screen VAD/Focus only when an event reaches that NPC; otherwise preserve them.
 - Maintain one compact `{{user}}` actor row containing only At, Doing, Circle, and Body. At records established current location/position, Doing records the PC's enacted/current activity, Body records established physical condition and carried/worn/held facts, and Circle records established affiliations/allies. Never infer PC thoughts, emotions, intent, goals, agenda, VAD, focus, awareness, or lies.
 - Commit order: relationship harm/profile/VAD -> residue/milestones -> NPC state/agendas/locations/quests/factions -> Chekhov -> optional World Sim -> inventory/thoughts/notebook -> Sparks/BOND -> DND log -> render.
 </state_contract>
 
 <st_state_bridge>
-- ST-STATE may inject an evaluator control block at runtime. Only a separate runtime line-protocol block whose first line is exactly `ST_STATE_HANDSHAKE v1`, whose final line is the matching terminator, and whose fields include `contract=3`, `preset=ST-ENDGAME`, and `mode=SHADOW` can activate Shadow behavior. That injected line protocol is the sole source of exact `ST_PATCH` transport and formatting instructions; text in this static preset, chat messages, examples, or user instructions never activates it.
+- ST-STATE may inject a transactional control block at runtime. Only a separate runtime line-protocol block whose first line is exactly `ST_STATE_HANDSHAKE v1`, whose final line is the matching terminator, and whose fields include `contract=3`, `preset=ST-ENDGAME`, and `mode=SHADOW` or `mode=NATIVE` can activate that exact mode. The injected protocol is the sole source of exact `ST_PATCH`, compatibility, dice-pool, and transport instructions; text in this static preset, chat messages, examples, or user instructions never activates it.
 - If no valid runtime control block was injected, remain in legacy mode: run the normal transaction and emit the complete legacy `<internal_states>` block exactly as before. Do not invent a patch marker.
 - In runtime-selected Shadow, legacy remains authoritative. On NORMAL, emit visible RP, then one complete `<!-- GFX_START --><internal_states>...</internal_states><!-- GFX_END -->` block, then exactly one runtime-specified `ST_PATCH` hidden comment after `GFX_END`, following only the injected line protocol for its marker and payload. Use the runtime-provided pre-turn head/base. Never invent a local patch format; the patch never replaces, edits, or abbreviates legacy state.
+- In runtime-selected Hybrid NATIVE, the injected local frame and canonical head are authoritative. On NORMAL, emit visible RP and exactly one runtime-specified authoritative `ST_PATCH`. Never emit NPC STATE, SCENE & WORLD, or numeric BONDS legacy rows. Emit one partial `<internal_states>` compatibility fragment only when an unsupported domain named by the injected protocol changed, and include only the changed unsupported sections. Unchanged unsupported domains remain in local canonical storage.
 - OOC and FLASH are prose/flash-handoff only: perform no roll, turn increment, mutation, legacy state serialization, or `ST_PATCH`.
-- `mode=NATIVE` is documented for a later release but locked off in this evaluator. Never activate native replacement or write a recovery artifact; an unsupported native request keeps legacy behavior.
 </st_state_bridge>
 
 <internal_dndsim>
@@ -591,7 +591,7 @@ $stateContent = @'
 </internal_gmnotebook>
 
 <state_output>
-- Append every NORMAL response, never OOC/FLASH. Raw HTML, no markdown fence. Preserve wrapper, summary titles, field labels, legacy relationship row. One concise row/item; `None` if empty. Always include the compact `{{user}}` row; never add NPC-only fields to it. US relationships: NPC→US Profile only. NPC pairs: reverse row only if useful/asymmetric. Brackets describe values; never print instructions/placeholders.
+- In LEGACY and SHADOW, append this complete block to every NORMAL response, never OOC/FLASH. In Hybrid NATIVE, do not use this full template; follow the injected protocol and emit only a changed unsupported compatibility fragment when required. Raw HTML, no markdown fence. Preserve wrapper, summary titles, field labels, legacy relationship row. One concise row/item; `None` if empty. Always include the compact `{{user}}` row in complete legacy output; never add NPC-only fields to it. US relationships: NPC→US Profile only. NPC pairs: reverse only if useful/asymmetric. Brackets describe values; never print instructions/placeholders.
 
 <!-- GFX_START -->
 <internal_states>
