@@ -18,8 +18,8 @@ Native is evaluative. Unsupported state domains remain compatibility-backed; see
 
 ## Install
 
-1. Import `ST-ENDGAME v0.4-eval.json` into SillyTavern.
-2. Install and enable ST-STATE for Shadow or Native operation.
+1. In **AI Response Configuration**, import `ST-ENDGAME v0.4-eval.json` as a preset.
+2. In SillyTavern's extensions panel, choose **Install extension**, enter `https://github.com/gorpix/ST-STATE`, and install/enable the extension.
 3. Import the Regex Suite only if the preset does not already contain its scripts.
 
 ## Development
