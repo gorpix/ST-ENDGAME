@@ -1,12 +1,23 @@
-param(
+﻿param(
   [Parameter(Mandatory=$true)][string]$Source,
   [Parameter(Mandatory=$true)][string]$Output,
-  [string]$RegexOutput,
-  [string]$ActiveSettings
+  [string]$RegexOutput
 )
 
+# Runs on Windows PowerShell 5.1 and PowerShell 7+. Keep this file saved as UTF-8 with BOM
+# so 5.1 reads the emoji/arrow literals correctly.
 $ErrorActionPreference = 'Stop'
-$preset = Get-Content -LiteralPath $Source -Raw | ConvertFrom-Json
+if ($PSVersionTable.PSVersion.Major -lt 6) {
+  # 5.1 otherwise serializes some arrays as {"value":[...],"Count":n}.
+  Remove-TypeData System.Array -ErrorAction SilentlyContinue
+}
+
+function Write-Utf8File([string]$Path, [string]$Text) {
+  $fullPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Path)
+  [IO.File]::WriteAllText($fullPath, $Text, (New-Object Text.UTF8Encoding $false))
+}
+
+$preset = Get-Content -LiteralPath $Source -Raw -Encoding UTF8 | ConvertFrom-Json
 
 function Get-Prompt([string]$Id) {
   $prompt = $preset.prompts | Where-Object identifier -eq $Id | Select-Object -First 1
@@ -72,9 +83,10 @@ Scene/NPCs: third-person limited. PC bodily sensations/results: second person. F
 - Register sensory/appearance detail once; omit for 4 messages unless spatial shift, contact, kinetic change, or new relevance occurs. Treat PC traits as habituated; show NPC response. Anatomy in motion may recur.
 </description_state>
 <calibration>
-- Prefer: "She planted both boots and faced him."
-- Prefer: "His shoulders folded toward his chest."
-- Prefer: "The clock struck again. The bridge shuddered beneath them."
+Short blunt landings that close a long branching observation look like:
+- "She planted both boots and faced him."
+- "His shoulders folded toward his chest."
+- "The clock struck again. The bridge shuddered beneath them."
 </calibration>
 </prose_rules>
 
@@ -151,256 +163,23 @@ Spoken NPC dialogue only: <font color="#HEX">"Dialogue"</font>. Assign/lock one 
 </rp_core>
 '@
 
-$stateContent = @'
-{{//Unified persistent mechanics and canonical state ledger.}}{{trim}}
-{{setvar::dndSimCoTHQ1::- DND_DC: lock each applicable actor DC before rolls.}}
-{{setvar::dndSimCoT::- DND_RESULT: apply DND and populate its state row.}}
-{{setvar::agendaTrackerCoT::- AGENDA_TICK: apply AGENDA advancement/completion.}}
-{{setvar::bondCoT1::- REL_HARM: apply Grudge and negative BOND rules.}}
-{{setvar::bondCoT2::- REL_GROWTH: apply Sparks cycle/conversion.}}
-{{setvar::chekhovsGunCoT::- CHEKHOV_FIRE: apply CHEKHOV locks, aging, seeds, fire, load, prune.}}
-{{setvar::gmNotebookCoT::- GM_NOTEBOOK: update NOTEBOOK, cap 20.}}
-{{setvar::gmNotebookCoTGamestate::Load latest canonical state and relevant NOTEBOOK entries.}}
-{{setvar::DNDSimDCCoT::- DND_DC: use the permanently locked DC.}}
-{{setvar::bondsTemplate::<details><summary>💚 BONDS</summary>- <b>[Full actor name A]</b> ↔ <b>[Full actor name B]</b> | BOND: [value] | Sparks: [value] | Grudge: [value]</details>}}
-{{setvar::invTemplate::<details><summary>🎒 INV & SKILLS</summary>- <b>Inv:</b> [items]<br>- <b>Titles/Skills:</b> [traits]<br>- <b>Status:</b> [conditions]<br>- <b>Mods:</b> [contextual +/-]</details>}}
-{{setvar::chekhovTemplate::<details><summary>🔫 CHEKHOV'S GUN</summary>- Active: [entries] | Locked: [entries] | Fired: [entries]</details>}}
-{{setvar::thoughtsTemplate::<details><summary>🧠 INTERNAL THOUGHTS</summary>- <b>[NPC]</b> | Internal Thoughts: [thoughts]</details>}}
-{{setvar::gmNotebookTemplate::<details style="display:none;"><summary>📓 GM'S NOTEBOOK</summary>- [R/T/D] [entries]</details>}}
-{{setvar::dndTemplate::<details><summary>🎲 DND TASK SIM</summary>- <b>Task:</b> [actor/action]<br>- <b>Locked DC:</b> [actor DCs]<br>- <b>User Roll:</b> [roll/mod/delta] | <b>NPC Roll:</b> [roll/mod/delta]<br>- <b>Outcome:</b> [tiers/consequences]</details>}}
-
-<state_engine>
-CORE:
-- Latest complete INTERNAL STATES block is canonical. After visible outcome is fixed, increment ct once, preserve unchanged facts, apply caused changes once, then serialize every section. Mechanics/stats stay out of narrative.
-- Update order: relationship harm/Grudge -> emotional residue/milestones -> agendas/locations/factions/quests -> Chekhov -> optional World Sim -> notebook/thoughts/inventory -> Sparks/BOND -> DND log -> render.
-
-DND:
-- Trigger any completed nontrivial skilled physical, social, coercion, persuasion, or insight action; routine daily acts auto-resolve. Lock each involved actor's DC before seeing rolls: Easy 1-5 | Moderate 5-10 | Hard 10-15 | Impossible 15-20. Base it on task, proficiency, gear, conditions, and opposition; never revise for story preference.
-- Apply one domain-relevant inventory/status modifier (-2..+2) to that actor's roll. A relevant social check also applies one pair BOND modifier once: >=15 DC-4; >=8 DC-2; <=-5 DC+4; <=-3 DC+2.
-- Roll User and NPC separately when both act. Compare each actor's roll only to their own locked DC, never to the other's roll. Delta=roll+modifier-DC.
-- Nat20 or delta>=8 Crit Success=extreme reward/stylish execution; delta0..7 Success=task achieved; -1..-3 Near Miss=fails with minor repercussion; -4..-7 Failure=moderate repercussion; Nat1 or <=-8 Crit Failure=disastrous/significant repercussion. Outcome/consequence is final and hidden.
-
-INVENTORY — PC only:
-- Track consequential items, weapons, tools, keys, consumables; add/remove on acquisition/use/loss.
-- Track background skills, award story titles for accomplishments, and track temporary physical/mental conditions. Titles/skills may grant passive domain-relevant DND modifiers; clear conditions through time/action.
-
-AGENDA:
-- Named NPC gets goal + 1-3 step agenda on first appearance; mundane goal if none. Off-screen NPC advances +1 step/turn; on-screen agenda remains active without automatic progress.
-- On departure, refresh from persona/events. If PC crosses destination/path, NPC may enter with agenda in progress or complete. On-screen incomplete NPC stays distracted/cuts contact short; mundane completion leaves them present; significant completion makes them eager to share at BOND>=3; reconcile opens repair behavior.
-- Completion: travel updates location; research plants Chekhov +1 Sparks with involved NPC; repair/build adds item/body note; rest reduces injury and clears one self-Grudge; reconcile follows full repair process and may reduce Grudge/add Sparks; confront may add Grudge/direct BOND loss; mundane assigns another mundane goal.
-- Quest/faction depth: agenda completion advances linked quest +1. Within 60 minutes of a TIME-lock, responsible NPC shifts to preparation. Fired STATE/DEP lock activates quest and relevant NPC response. Alliance quest adds pair Sparks; hostile work may lower pair BOND and plant Grudge. Never raise BOND directly outside Sparks conversion.
-
-RELATIONSHIPS:
-- Track every named pair with shared contact, history, allegiance, or conflict—including NPC↔NPC—in one legacy row; omit only unrelated strangers to avoid empty combinatorial rows. BOND -5..20=durable affinity; Sparks=positive momentum; Grudge=unresolved harm. Assign stable 2-letter codes (US for User) and retain legacy bond_X_Y/sparks_X_Y/grudge_X_Y names whenever existing state/macros use them. Pair values are symmetric; profiles are directional.
-- Create a directional profile only for salient pairs: recurring contact, active conflict/goal, BOND shift, intimacy, or explicit user interest. Fields: Type neutral/friend/romantic/family/rival/transactional/hostile/mixed | Route approach/maintain/test/repair/distance/rupture | Trust guarded/selective/reliable/confiding | Attraction none/latent/acknowledged/mutual/conflicted/rejected | Expect | Public | Private | Jealousy none/watchful/active | Boundary | Anchors max3 concrete memories/promises.
-- BOND tiers affect default behavior: -5..-3 severed=cold/hostile, verbal weapons, avoids proximity; -2..2 neutral=polite/indifferent, normal distance; 3..7 warmth=seeks company/remembers details; 8..15 attachment=inside jokes/casual touch when boundaries allow; 16..20 core bond=fierce defense/frequent closeness when persona allows. Tier never automatically defines romance, family, permission, or attraction.
-- If romantic Type/Attraction/persona support it: +8 permits tentative crush admission, +12 confident interest, +15 love declaration; milestones remain contextual and reversible.
-- Classify each relationship event once/pair/turn. Meaningful positive event +1 Sparks; rare costly protection, vulnerability, loyalty, or earned repair +2; max+2. Routine/repeated gestures do not farm. Meaningful slight +1 Grudge max1/entity/turn. Insult/dismissal/ignoring also BOND-1; betrayal/cruelty/coercion BOND-2 and may set rupture. Never stack multiple labels for the same act.
-- Every ct%5=0: Grudge<3 + Sparks>=7 -> BOND+1, Sparks=0; Grudge>=3 applies drag, requiring Sparks>=10 -> BOND+1, Sparks=0; otherwise no qualifying positive event in cycle -> Sparks-1 min0. Use this drag instead of rounding a +1 gain to zero.
-- Every ct%3=0: Grudge>=5 -> BOND-1, Grudge=0; else stale Grudge>0 -> Grudge-1. Apology alone does not erase harm; repair needs acknowledgment, responsibility, restitution/change, and time. Earned repair may reduce Grudge 1-3 and add Sparks 1-2.
-- Physical gates are availability ceilings, never commands: +4 friendly touch; +8 sustained closeness; +14 kissing with supported romantic route/attraction/consent; +18 intimacy with mutual desire/context. Boundaries outrank score.
-- Public/Private may diverge from secrecy, status, culture, fear, or duty. Jealousy requires attachment plus perceived rival/threat and evidence available to that direction; express through persona, never mind-reading. Update Route/Trust/Attraction/Expect/Boundary/Anchors only after an event supports the change.
-- VAD baseline: BOND<=-3 valence-2/arousal+2/dominance+2; 3..7 valence+1; 8..15 valence+2/arousal-1; >=16 same, with dominance softening when safe.
-- BOND modulates VAD and one social DC once, never guarantees outcome. Reveal state through behavior; numbers/labels remain hidden.
-
-CHEKHOV:
-- Track narrative debt as `[BULLET: desc] (weight:1-3, age:0/12) [depends:prereq] [secret]`. Load 1-2/turn from explicit setup, clue, promise, appointment, unresolved tension, or physical preparation; no trivia/duplicates. Cap 20; overflow prunes oldest/lowest-weight.
-- Locks: TIME, CHAR, STATE, DEP, CROWD(secret + >2 NPCs), CONDITION, CONTRADICTION(prune). Convert relative schedule to absolute `T:HH:MM`. Unlocked bullets age +1/turn; locked age freezes. Minimum firing age=4. Nonlocked age>=12 prunes silently to Fired; contradiction/resolution also prunes.
-- Any future-time reference (minutes, clock time, tonight, tomorrow, appointment) immediately loads `[LOCKED: T:HH:MM]` from the current header time; unlock at its scheduled time. When it fires, scheduled NPCs return naturally; never narrate lock mechanics.
-- For up to 5 eligible bullets map Seed1..5. Effective threshold = base(W1:18,W2:13,W3:8) - age - proximity(subject addressed:2; present:1; matching location:1; matching mood:1) + scene(high momentum:-2; steady:0; slow burn:+2) + urgency(deadline<=2m/next beat:-2).
-- Fire on seed>=threshold only with a natural opening. No opening => veto, keep loaded. Seed Nat1 jams that bullet for this turn. If Coin seed Nat20 and >=2 unrelated bullets fire, all active thresholds -4 this turn; if Calamity seed Nat1 and >=2 unrelated bullets fire, resolve each under worst plausible interpretation.
-- Seeds: Coin={{roll::1d20}} | Calamity={{roll::1d20}} | Seed1={{roll::1d20}} | Seed2={{roll::1d20}} | Seed3={{roll::1d20}} | Seed4={{roll::1d20}} | Seed5={{roll::1d20}}.
-
-THOUGHTS:
-- Up to 3 spotlight NPCs, on-screen first. Write 1-3 terse, fragmented, chaotic, impulsive, raw lines each, accurate to persona, VAD, instincts, emotion, and knowledge. Off-screen entry must include current location/task. Thoughts motivate later action but never grant knowledge.
-
-NOTEBOOK:
-- Max 20 pipe-dense entries, 1-2 concise sentences each: [R] rule/knowledge/OOC reminder; [T] longer thread not in Chekhov; [D] anomaly/check. Add only uncovered information; revise/prune instead of duplicating; drop oldest at 21. Never copy relationship, inventory, agenda, or Chekhov data.
-
-STATE OUTPUT:
-- Append after every NORMAL RP response; never on OOC or FLASH. During FLASH, last complete state remains canonical. Raw HTML, no markdown fence. Exact wrapper/summaries/relationship row preserve UI regex. Use "None" for empty section; one concise line/item.
-
-<!-- GFX_START -->
-<internal_states>
-<details><summary>🎬 INTERNAL STATES (Turn: [ct])</summary>
-
-<details><summary>👤 NPC AGENDAS</summary>
-- <b>[NPC]</b> | Agenda: [goal] | Step [n/max] | Aware: [known] | Fibs: [lies] | Circle: [allies] | Body: [condition]
-</details>
-
-<details><summary>👤 NPC LOCATIONS</summary>
-- <b>[NPC]</b> | Location: [place/position] | Activity: [current]
-</details>
-
-<details><summary>🏳️ FACTIONS</summary>
-- <b>[Faction]</b> | Goal: [goal] | Intel: [known] | Fibs: [lies] | State: [morale] | Conflict: [internal] | Relations: [external]
-</details>
-
-<details><summary>💚 BONDS</summary>
-- <b>[A]</b> ↔ <b>[B]</b> | BOND: [Value] | Sparks: [Value] | Grudge: [Value]
-- [Only if pair is salient] Profile [A]→[B]: Type=[...] | Route=[...] | Trust=[...] | Attraction=[...] | Expect=[...] | Public/Private=[...]/[...] | Jealousy=[...] | Boundary=[...] | Anchors=[...]
-- [Only if asymmetric and salient] Profile [B]→[A]: Type=[...] | Route=[...] | Trust=[...] | Attraction=[...] | Expect=[...] | Public/Private=[...]/[...] | Jealousy=[...] | Boundary=[...] | Anchors=[...]
-</details>
-
-<details><summary>🧩 EMOTIONAL RESIDUE</summary>
-- [NPC/pair] | Event: [short] | Meaning: [changed belief/feeling] | Aftereffect: [attention/VAD/voice/expectation/boundary/action] | Cue: [reactivation/repair]
-</details>
-
-<details><summary>📜 QUESTS</summary>
-- <b>Main</b> | Objective: [progress/reward]
-- <b>Side</b> | Objective: [progress/reward]
-</details>
-
-<details><summary>🎒 INV & SKILLS</summary>
-- <b>Inv:</b> [items]<br>- <b>Titles/Skills:</b> [traits]<br>- <b>Status:</b> [conditions]<br>- <b>Mods:</b> [contextual +/-]
-</details>
-
-<details><summary>🔫 CHEKHOV'S GUN</summary>
-- Active: [eligible/unlocked entries] | Locked: [locked entries] | Fired: [resolved/pruned entries]
-</details>
-
-<details><summary>🧠 INTERNAL THOUGHTS</summary>
-- <b>[NPC]</b> | Internal Thoughts: [1-3 raw lines; off-screen location/task if applicable]
-</details>
-
-<details style="display:none;"><summary>📓 GM'S NOTEBOOK</summary>
-- [R/T/D] [entry]
-</details>
-
-<details><summary>🎲 DND TASK SIM</summary>
-- <b>Task:</b> [actor/action]<br>- <b>Locked DC:</b> [User DC; NPC DC if involved]<br>- <b>User Roll:</b> [roll+mod/delta] | <b>NPC Roll:</b> [roll+mod/delta]<br>- <b>Outcome:</b> [tier/consequence per involved actor]
-</details>
-
-{{getvar::worldsimTemplate}}
-
-<details><summary>🌌 PHYSICS, ENGINE & WORLD</summary>
-- Env: [hazards/weather/magic] | Physics: [positions/constraints]
-</details>
-
-</details>
-</internal_states>
-<!-- GFX_END -->
-</state_engine>
-'@
-
-$boltContent = @'
-{{//Compact BOLT turn engine for the consolidated preset.}}{{trim}}
-
-# BOLT
-Private/native reasoning; terse decision notes only: fragments, labels, and deltas—not scene prose or dialogue. Never compose, rehearse, quote, or prewrite the final response or state serialization in reasoning. Generate them once after reasoning ends. Skip inapplicable branches.
-
-0. ROUTE
-- If OOC: pause RP; answer directly; STOP. No roll, time advance, or state output.
-- Otherwise apply <flash_router> before dice/state processing. Do not use the presence/fullness of NORMAL state to choose route; preserve its latest complete block as canonical continuity. FLASH -> obey USER/AUTO handoff exactly, perform no rolls, turn increment, state mutation, or serialization, then STOP. NORMAL -> continue.
-
-1. LOAD
-Read chat + latest canonical <internal_states>. Fix time/place, exact positions, unresolved action, relevant sensory facts, spotlight NPCs, immediate goals, knowledge limits, relationship context, and active threads. Preserve state unless events change it.
-
-2. NPC ACTION
-List 3 materially different response-path skeletons as short cause -> action -> yield labels; no sentences, dialogue, narration, or sensory prose. Use persona, goal, need, constraint, VAD/instinct, knowledge, relationship, and capability. Reject paths that violate physics, knowledge, dice, autonomy, or continuity; select the most interesting causally valid path. Each relevant NPC commits to one coherent action sequence with fallibility and independent agency. Stop at PC's next meaningful choice.
-
-3. MECHANICS
-If any completed nontrivial skilled action occurs, apply <state_engine> DND once:
-- Select one applicable BOND DC modifier for relevant social check and one inventory/status roll modifier; never double-count.
-- Lock DC before rolls.
-- Roll pool: User {{roll::1d20}} | NPC {{roll::1d20}}. Use involved actor(s) only; compare each roll only to that actor's locked DC; calculate delta/tier once; never revise for preferred story.
-Else skip dice.
-
-4. OUTPUT SPEC
-Record only the final-output constraints: header facts; spotlight; selected action/outcome; 1-3 sensory anchors; voice features; PC-choice yield; applicable adult/combat rules; dialogue color; GFX kind/fields if triggered. Do not write candidate sentences, dialogue lines, paragraphs, or a response draft.
-
-5. CHECK ONCE
-Verify the selected path/spec for autonomy + natural yield; no echo; perception/knowledge; persona/goal/VAD; roll/outcome consistency; prose requirements/lexicon; header/color/GFX; narrative continuity. Fix the spec only—do not draft prose, restart, or reconsider.
-
-6. STATE
-Record state deltas only, exactly once in this order: ct+1 → {{getvar::bondCoT1}} → {{getvar::agendaTrackerCoT}} → {{getvar::chekhovsGunCoT}} → {{getvar::worldsimCoT}} only if <internal_worldsim> exists → {{getvar::gmNotebookCoT}} plus thoughts/inventory → {{getvar::bondCoT2}} → {{getvar::dndSimCoT}}. Populate DND only when a check occurred. Do not serialize tags, sections, or rows in reasoning.
-
-FINAL OUTPUT — only after private reasoning ends:
-Generate the visible RP once from the resolved spec, then append the exact complete <state_engine> serialization from the recorded deltas. State must match the generated prose. If GFX triggered, append its structured hint as required. Never expose reasoning or the output spec.
-'@
-
-# Port the already-optimized Main/GFX/Bonds/BOLT from the selected source.
-# Compress surrounding modules; never replace these with another preset lineage.
+# Kernel and scene intro blocks are ported from the source preset; everything
+# else below is defined in this script and is authoritative.
 $sourceMainContent = Remove-PromptComments ((Get-Prompt 'main').content)
 $sourceSceneContent = $sourceMainContent
 $sourceScenePrompt = $preset.prompts | Where-Object identifier -eq 'f52c1001-6f87-4e96-955d-0185f8f12c01' | Select-Object -First 1
 if ($sourceScenePrompt) {
   $sourceSceneContent = Remove-PromptComments $sourceScenePrompt.content
 }
-$sourceGfxPrompt = $preset.prompts | Where-Object identifier -eq '019f62e8-892f-701a-afd5-49222c79fdb6' | Select-Object -First 1
-if (-not $sourceGfxPrompt) {
-  $sourceGfxPrompt = $preset.prompts | Where-Object identifier -eq 'f52c1007-6f87-4e96-955d-0185f8f12c07' | Select-Object -First 1
-}
-$sourceStatePrompt = $preset.prompts | Where-Object identifier -eq '019f62e8-892f-7027-93ef-159f3d55c410' | Select-Object -First 1
-$sourceBondsPrompt = $preset.prompts | Where-Object identifier -eq '019f62e8-892f-7023-825d-9351eca0347f' | Select-Object -First 1
-$sourceAgendaPrompt = $preset.prompts | Where-Object identifier -eq '019f67b4-7381-7000-bcc4-496b2e6ed920' | Select-Object -First 1
-$sourceBoltPrompt = $preset.prompts | Where-Object identifier -eq '634ecfec-1862-4ce0-821e-e31057acadfa' | Select-Object -First 1
-$boltSourceLabel = $Source
-if (-not $ActiveSettings) {
-  $sourceDirectory = Split-Path -Parent ([IO.Path]::GetFullPath($Source))
-  if ((Split-Path -Leaf $sourceDirectory) -eq 'OpenAI Settings') {
-    $candidateSettings = Join-Path (Split-Path -Parent $sourceDirectory) 'settings.json'
-    if (Test-Path -LiteralPath $candidateSettings) { $ActiveSettings = $candidateSettings }
-  }
-}
-if ($ActiveSettings) {
-  $activeDocument = Get-Content -LiteralPath $ActiveSettings -Raw | ConvertFrom-Json -Depth 100
-  $activePresetName = [string]$activeDocument.preset_settings_openai
-  $sourcePresetName = [IO.Path]::GetFileNameWithoutExtension($Source)
-  if ($activePresetName -and $activePresetName -ne $sourcePresetName) {
-    throw "Active settings select '$activePresetName', not source preset '$sourcePresetName'"
-  }
-  $activeBoltPrompt = $activeDocument.oai_settings.prompts | Where-Object identifier -eq '634ecfec-1862-4ce0-821e-e31057acadfa' | Select-Object -First 1
-  if (-not $activeBoltPrompt -or -not $activeBoltPrompt.content) { throw 'Missing active BOLT prompt in settings.json' }
-  $sourceBoltPrompt = $activeBoltPrompt
-  $boltSourceLabel = $ActiveSettings
-}
-if ($sourceGfxPrompt) {
-  $sourceGfxContent = Remove-PromptComments $sourceGfxPrompt.content
-} else {
-  $gfxMatch = [regex]::Match($sourceMainContent, '(?s)<gfx_protocol>.*?</gfx_protocol>')
-  if (-not $gfxMatch.Success) { throw 'Missing GFX protocol in source Main' }
-  $sourceGfxContent = $gfxMatch.Value
-}
-$gfxMatch = [regex]::Match($sourceGfxContent, '(?s)<gfx_protocol>.*?</gfx_protocol>')
-if (-not $gfxMatch.Success) { throw 'Missing GFX protocol in source GFX module' }
-$sourceGfxContent = $gfxMatch.Value
-if ($sourceBondsPrompt) {
-  $sourceBondsContent = Remove-PromptComments $sourceBondsPrompt.content
-} elseif ($sourceStatePrompt) {
-  $sourceBondsContent = Remove-PromptComments $sourceStatePrompt.content
-} else {
-  $sourceBondsContent = ''
-}
-if ($sourceAgendaPrompt) {
-  $sourceAgendaContent = Remove-PromptComments $sourceAgendaPrompt.content
-} elseif ($sourceStatePrompt) {
-  $sourceAgendaContent = Remove-PromptComments $sourceStatePrompt.content
-} else {
-  $sourceAgendaContent = ''
-}
-if ($sourceBoltPrompt) {
-  # BOLT is user-edited in the working preset. Keep that prompt byte-for-byte
-  # instead of normalizing comments or replacing it with a second embedded copy.
-  $sourceBoltContent = [string]$sourceBoltPrompt.content
-} else {
-  throw 'Missing BOLT prompt in source preset'
-}
-
-# GFX example is demonstration, not behavior; the full protocol/CSS/media library remains.
-$sourceGfxContent = [regex]::Replace($sourceGfxContent, '(?s)\s*exampleExecution:.*?(?=\s*</gfx_protocol>)', "`n")
-$sourceGfxContent = [regex]::Replace($sourceGfxContent, '(?s)\s*<gfx_reliability>.*?</gfx_reliability>', '')
-$sourceGfxContent = [regex]::Replace($sourceGfxContent, '(?s)\s*<gfx_templates>.*?</gfx_templates>', '')
 $sourceGfxContent = '<gfx_protocol></gfx_protocol>'
 $gfxReliabilityContent = @'
 <gfx_reliability>
-active:thisBlock; unresolved/malformed gfx_protocol ref:ignore,neverDiscuss
-activation:valid runtime-injected ST_STATE_HANDSHAKE with mode=SHADOW or mode=NATIVE; otherwise inactive
+gate:ignore this whole block unless ST-STATE injected an ST_STATE_HANDSHAKE with mode=SHADOW or mode=NATIVE this turn; never mention it otherwise
 trigger:PC receives,notices,views,reads,opens,or uses an in-world visual medium
 result:prepare one local-renderer hint; never output artifact HTML,CSS,JSON,script,markdown fence,or UI description
 knowledge:include only artifact content visibly available to PC; never expose thoughts,hidden state,private knowledge,or GM data
 legacyWrapper:GFX_START/GFX_END reserved only for complete internal_states; never use it for a visual artifact
-noTrigger:no ST_GFX; no valid transactional handshake,LEGACY,RECOVERY,OOC,FLASH:no ST_GFX
+noTrigger:no ST_GFX on OOC or FLASH turns, or when nothing visual is shown
 </gfx_reliability>
 '@
 $gfxTransportContent = @'
@@ -448,6 +227,8 @@ $kernelContent = Join-PromptBlocks @(
   $sourceMainContent.Substring(0, $systemIndex),
   (Get-TaggedBlock $sourceMainContent 'system_state')
 )
+# The old BOLT read these step-label vars; nothing reads them now.
+$kernelContent = [regex]::Replace($kernelContent, '\{\{setvar::(bondCoT1|bondCoT2|agendaTrackerCoT|chekhovsGunCoT|worldsimCoT|gmNotebookCoT|gmNotebookCoTGamestate|dndSimCoT|dndSimCoTHQ1|DNDSimDCCoT)::\}\}', '')
 $sceneContent = Join-PromptBlocks @(
   (Get-TaggedBlock $sourceSceneContent 'do_not_repeat_descriptions'),
   (Get-TaggedBlock $sourceSceneContent 'NPC_intro'),
@@ -474,43 +255,9 @@ $lexiconDialogueContent = Join-PromptBlocks @(
 )
 $gfxModuleContent = $sourceGfxContent.Trim()
 
-# Preserve the expanded optimized relationship engine exactly; compact state peers around it.
-$stateContent = [regex]::Replace($stateContent, '(?s)AGENDA:\s*.*?(?=\s*RELATIONSHIPS:)', "</internal_inv>`n`n" + $sourceAgendaContent.Trim() + "`n`n")
-$residueContent = @'
-<emotional_residue>
-- Track only high-impact events: betrayal, sacrifice, rescue, humiliation, grief, first vulnerability, intimacy, public defense, major failure, or a crossed threshold. Do not duplicate BOND, Sparks, Grudge, or existing Anchors.
-- Store each active residue as `[NPC/pair] | Event: [short] | Meaning: [what it changed] | Aftereffect: [attention/VAD/voice/expectation/boundary/action] | Cue: [what reactivates or repairs it]`. Keep only residues that still alter behavior; merge related entries.
-- Residue persists through the next relevant scenes. Show it through changed attention, timing, avoidance, protectiveness, tenderness, defensiveness, overcompensation, or altered speech; never state the ledger or label in prose.
-- Transformative milestone: when an event permanently changes identity, route, goal, ritual, expectation, boundary, or relationship memory, promote it to a Bond Anchor/persona memory and clear the temporary residue. Promotion requires visible consequence, not a single dramatic line. Later proof can revise its meaning without erasing the event.
-- Repair/integration reduces aftereffects through acknowledgment, changed behavior, restitution, time, or a contradictory lived experience. Residue never grants knowledge the NPC did not have.
-</emotional_residue>
-
-{{setvar::residueCoT::- RESIDUE: record high-impact emotional aftereffects; promote lasting changes to Anchor/persona memory; show behavior, not labels.}}
-'@
-$stateContent = [regex]::Replace($stateContent, '(?s)RELATIONSHIPS:\s*.*?(?=\s*CHEKHOV:)', $sourceBondsContent.Trim() + "`n`n" + $residueContent.Trim() + "`n`n")
-$stateContent = [regex]::Replace($stateContent, '(?m)^DND:$', "<internal_dndsim>`nDND:")
-$stateContent = [regex]::Replace($stateContent, '(?m)^INVENTORY — PC only:$', "</internal_dndsim>`n`n<internal_inv>`nINVENTORY — PC only:")
-$stateContent = [regex]::Replace($stateContent, '(?m)^CHEKHOV:$', "<internal_chekhovguntracker>`nCHEKHOV:")
-$stateContent = [regex]::Replace($stateContent, '(?m)^THOUGHTS:$', "</internal_chekhovguntracker>`n`n<internal_npcthoughts>`nTHOUGHTS:")
-$stateContent = [regex]::Replace($stateContent, '(?m)^NOTEBOOK:$', "</internal_npcthoughts>`n`n<internal_gmnotebook>`nNOTEBOOK:")
-$stateContent = [regex]::Replace($stateContent, '(?m)^STATE OUTPUT:$', "</internal_gmnotebook>`n`nSTATE OUTPUT:")
-
-$boltContent = $sourceBoltContent.Trim()
-
-# Personal unified state engine. This final assignment is authoritative; source
-# modules above serve only as parity inputs while the personal schema stays whole.
+# Personal unified state engine.
 $stateContent = @'
 {{//Personal unified mechanics and canonical state ledger.}}{{trim}}
-{{setvar::dndSimCoTHQ1::- DND_DC: lock each involved actor's final DC before rolls.}}
-{{setvar::DNDSimDCCoT::- DND_DC: use the locked actor-specific DC; never revise.}}
-{{setvar::dndSimCoT::- DND_RESULT: record involved rolls, modifiers, deltas, tiers, consequences.}}
-{{setvar::agendaTrackerCoT::- AGENDA: advance off-screen steps; resolve completions, quests, factions, locations.}}
-{{setvar::bondCoT1::- REL_PRE: apply event classification, Grudge, direct negative BOND, profile/VAD changes.}}
-{{setvar::residueCoT::- RESIDUE: update active aftereffects; repair, reactivate, merge, or promote milestones.}}
-{{setvar::bondCoT2::- REL_POST: apply Sparks, cycle conversion/fade, then sync profiles.}}
-{{setvar::chekhovsGunCoT::- CHEKHOV: unlock, age, seed-test, fire/veto, load, jam, prune.}}
-{{setvar::gmNotebookCoT::- NOTEBOOK: revise unique R/T/D entries; cap 20.}}
-{{setvar::gmNotebookCoTGamestate::Load latest complete canonical state and relevant hidden NOTEBOOK entries.}}
 {{setvar::bondsTemplate::<details><summary>💚 BONDS</summary>- <b>[Full actor name A]</b> ↔ <b>[Full actor name B]</b> | BOND: [Value] | Sparks: [Value] | Grudge: [Value]<br>- Profile [Full name From]→[Full name To]: Type=[type] | Route=[route] | Trust=[state] | Attraction=[state] | Expect=[short] | Public/Private=[stance]/[stance] | Jealousy=[state] | Boundary=[short] | Anchors=[max 3]</details>}}
 {{setvar::invTemplate::<details><summary>🎒 INV & SKILLS</summary>- <b>Inv:</b> [items]<br>- <b>Titles/Skills:</b> [traits]<br>- <b>Status:</b> [conditions]<br>- <b>Mods:</b> [contextual +/-]</details>}}
 {{setvar::chekhovTemplate::<details><summary>🔫 CHEKHOV'S GUN</summary>- Active: [entries] | Locked: [entries] | Fired: [entries]</details>}}
@@ -520,19 +267,12 @@ $stateContent = @'
 
 <state_engine>
 <state_contract>
-- LEGACY and SHADOW use the latest complete `<internal_states>` as canonical compatibility state. Hybrid NATIVE uses ST-STATE's injected canonical state and authoritative `ST_PATCH`; it emits only changed unsupported compatibility sections when the runtime protocol requests them. NORMAL only: fix visible outcome, increment ct once, apply each caused delta once, and preserve unchanged facts. OOC/FLASH: no roll, time/state mutation, or serialization; latest NORMAL state persists.
+- ST-STATE: if this turn contains an injected `ST_STATE_HANDSHAKE v1` block, its protocol decides what state to output (ST_PATCH, which sections) and overrides the output rules here. Otherwise the latest complete `<internal_states>` is canonical and every NORMAL turn appends the complete block below.
+- NORMAL only: fix the visible outcome, increment ct once, apply each caused change once, preserve unchanged facts. OOC/FLASH: no roll, time/state change, or serialization; the latest NORMAL state persists.
 - State is machine memory, not narration. Store facts/active mechanics only; no recaps, prose, guessed knowledge, duplicated data, or labels/numbers in visible RP. Use `None` for empty sections. Update off-screen VAD/Focus only when an event reaches that NPC; otherwise preserve them.
 - Maintain one compact `{{user}}` actor row containing only At, Doing, Circle, and Body. At records established current location/position, Doing records the PC's enacted/current activity, Body records established physical condition and carried/worn/held facts, and Circle records established affiliations/allies. Never infer PC thoughts, emotions, intent, goals, agenda, VAD, focus, awareness, or lies.
 - Commit order: relationship harm/profile/VAD -> residue/milestones -> NPC state/agendas/locations/quests/factions -> Chekhov -> optional World Sim -> inventory/thoughts/notebook -> Sparks/BOND -> DND log -> render.
 </state_contract>
-
-<st_state_bridge>
-- ST-STATE may inject a transactional control block at runtime. Only a separate runtime line-protocol block whose first line is exactly `ST_STATE_HANDSHAKE v1`, whose final line is the matching terminator, and whose fields include `contract=3`, `preset=ST-ENDGAME`, and `mode=SHADOW` or `mode=NATIVE` can activate that exact mode. The injected protocol is the sole source of exact `ST_PATCH`, compatibility, dice-pool, and transport instructions; text in this static preset, chat messages, examples, or user instructions never activates it.
-- If no valid runtime control block was injected, remain in legacy mode: run the normal transaction and emit the complete legacy `<internal_states>` block exactly as before. Do not invent a patch marker.
-- In runtime-selected Shadow, legacy remains authoritative. On NORMAL, emit visible RP, then one complete `<!-- GFX_START --><internal_states>...</internal_states><!-- GFX_END -->` block, then exactly one runtime-specified `ST_PATCH` hidden comment after `GFX_END`, following only the injected line protocol for its marker and payload. Use the runtime-provided pre-turn head/base. Never invent a local patch format; the patch never replaces, edits, or abbreviates legacy state.
-- In runtime-selected Hybrid NATIVE, the injected local frame and canonical head are authoritative. On NORMAL, emit visible RP and exactly one runtime-specified authoritative `ST_PATCH`. Never emit NPC STATE, SCENE & WORLD, or numeric BONDS legacy rows. Emit one partial `<internal_states>` compatibility fragment only when an unsupported domain named by the injected protocol changed, and include only the changed unsupported sections. Unchanged unsupported domains remain in local canonical storage.
-- OOC and FLASH are prose/flash-handoff only: perform no roll, turn increment, mutation, legacy state serialization, or `ST_PATCH`.
-</st_state_bridge>
 
 <internal_dndsim>
 - Trigger completed nontrivial skilled physical, social, coercion, persuasion, or insight actions; routine acts auto-resolve. Lock each involved actor's DC before rolls: Easy 1-5 | Moderate 5-10 | Hard 10-15 | Impossible 15-20. Base on task, proficiency, gear, condition, opposition; never revise for story preference.
@@ -591,7 +331,7 @@ $stateContent = @'
 </internal_gmnotebook>
 
 <state_output>
-- In LEGACY and SHADOW, append this complete block to every NORMAL response, never OOC/FLASH. In Hybrid NATIVE, do not use this full template; follow the injected protocol and emit only a changed unsupported compatibility fragment when required. Raw HTML, no markdown fence. Preserve wrapper, summary titles, field labels, legacy relationship row. One concise row/item; `None` if empty. Always include the compact `{{user}}` row in complete legacy output; never add NPC-only fields to it. US relationships: NPC→US Profile only. NPC pairs: reverse only if useful/asymmetric. Brackets describe values; never print instructions/placeholders.
+- Append this complete block to every NORMAL response, never OOC/FLASH, unless an injected ST-STATE protocol says otherwise. Raw HTML, no markdown fence. Preserve wrapper, summary titles, field labels, legacy relationship row. One concise row/item; `None` if empty. Always include the compact `{{user}}` row in complete legacy output; never add NPC-only fields to it. US relationships: NPC→US Profile only. NPC pairs: reverse only if useful/asymmetric. Brackets describe values; never print instructions/placeholders.
 
 <!-- GFX_START -->
 <internal_states>
@@ -659,8 +399,9 @@ $npcModule = New-PromptModule $main 'f52c1003-6f87-4e96-955d-0185f8f12c03' '🎭
 $adultModule = New-PromptModule $main 'f52c1004-6f87-4e96-955d-0185f8f12c04' '🔞 Adult Mode' $adultContent $true
 $combatGenesisModule = New-PromptModule $main 'f52c1005-6f87-4e96-955d-0185f8f12c05' '⚔️ Combat & NPC Creation' $combatGenesisContent $true
 $lexiconDialogueModule = New-PromptModule $main 'f52c1006-6f87-4e96-955d-0185f8f12c06' '🗣️ Lexicon & Dialogue Color' $lexiconDialogueContent $true
-$gfxVariableSetterContent = '{{setvar::gfx_protocol::' + $gfxModuleContent + '}}{{trim}}'
-$gfxModule = New-PromptModule $main 'f52c1007-6f87-4e96-955d-0185f8f12c07' '🖼️ Pop-In Graphics (Variable Source)' $gfxVariableSetterContent $true
+# Off by default: GFX only works with ST-STATE in SHADOW/NATIVE, and ST-STATE
+# does not inject these rules itself, so enable this alongside it.
+$gfxModule = New-PromptModule $main 'f52c1007-6f87-4e96-955d-0185f8f12c07' '🖼️ Pop-In Graphics (enable with ST-STATE)' $gfxModuleContent $false
 $rpModules = @($sceneModule, $proseModule, $npcModule, $adultModule, $combatGenesisModule, $lexiconDialogueModule, $gfxModule)
 
 $state = Get-Prompt '019f62e8-892f-7027-93ef-159f3d55c410'
@@ -672,17 +413,61 @@ $world = Get-Prompt '019f62e8-892f-7024-a40f-b906fceb58d2'
 $world.name = '🌎 World Sim (Deferred Refactor)'
 Set-PromptEnabled $world $false
 
+$flashContent = @'
+<flash_router>
+FLASH is a temporary zoom into a small local moment that a fast model can keep coherent for a few short turns. Before writing, silently choose NORMAL or FLASH and never announce or explain the choice. Routes, state blocks, and dice in earlier turns do not bias this choice either way.
+
+<user_trigger>
+If an extension supplies the out-of-band marker `<flash_request/>` (interface control, not in-world speech or action), choose FLASH whenever the roleplay has an immediate moment that can be framed locally.
+- On this path do not continue the roleplay, update state, describe context, or write an opening beat. Output only: <flash_handoff entry="USER"/>
+- If the marker accompanies a new user action or line, leave it unresolved; it becomes the first FLASH turn unchanged.
+- If there is no immediate moment to frame, give a short OOC failure and stay NORMAL. Never invent a scenario to satisfy the marker.
+</user_trigger>
+
+<auto_route>
+Without the marker, NORMAL is the default. Choose FLASH only when all of these hold:
+- the scene has reached, or naturally reaches, an immediate exchange with an established actor or local event whose important beats unfold over seconds or minutes;
+- the moment benefits from at least two short turns of participation rather than one complete answer or resolution;
+- the beats fit a small local frame with no time skip or remote scene change;
+- the response can stop at a natural point without withholding an answer or outcome the user already earned.
+You may establish an already-authorized event and hand off at its first interruptible beat, but never decide a consequential outcome inside FLASH. Never invent a fight, threat, accident, actor, or hazard to create a FLASH opportunity.
+</auto_route>
+
+<normal_path>
+Write an ordinary complete response under every active preset rule, including complete state output.
+</normal_path>
+
+<auto_flash_path>
+Write with the same quality, continuity, POV, voice, and scene awareness as a normal response, but stop at the earliest point where the user's participation becomes valuable: at most one brief initiating action or event, then the first line, question, request, challenge, offer, imminent physical beat, hazard, or change that invites the user's character to respond. Stop right after it.
+Use the latest NORMAL state as private grounding; do not roll, and do not output, summarize, or update state. After the final visible prose, append: <flash_handoff entry="AUTO"/>
+</auto_flash_path>
+</flash_router>
+'@
 $flash = Get-Prompt 'a1089ad5-4c04-4101-8796-6342fa677830'
 $flash.name = '⚡ FLASH Mode Router (Toggle)'
+$flash.content = $flashContent.Trim()
 Set-PromptEnabled $flash $true
 
-if ($boltContent -notmatch '^\s*\{\{getvar::gfx_protocol\}\}') {
-  $boltContent = Join-PromptBlocks @('{{getvar::gfx_protocol}}', $boltContent)
-}
+# BOLT is a short goals list, sent as the assistant's own note at depth 0.
+# Reasoning models plan well on their own; a mandatory step-by-step script
+# only made them think longer.
+$boltContent = @'
+{{//BOLT v0.5: short turn plan, sent as an assistant message.}}{{trim}}
+(My private plan for this turn. I think in brief notes, not drafted prose, then write the reply once. I never show this plan.)
+- Route: OOC means I pause the scene and answer directly, with no roll, time advance, or state. FLASH per <flash_router> means I follow its handoff and stop. Anything else is a NORMAL turn.
+- Ground: where everyone is, what they hold, what is unresolved, and who knows what. Every fact this turn does not change stays as it was.
+- NPCs: each relevant NPC acts from their own persona, goal, mood, and knowledge, and commits to one coherent action sequence. I take the most interesting path that respects physics, knowledge limits, and {{user}}'s autonomy.
+- Dice: only for a completed, nontrivial skilled action. I lock the DC first, then use the roll (that actor's injected ST_DICE_POOL roll if present, otherwise User {{roll::1d20}} | NPC {{roll::1d20}}). The result stands.
+- Write: header first, then the reply in the house voice, stopping where {{user}} must choose or act. I never write {{user}}'s actions, words, thoughts, or feelings.
+- State: I apply only what changed, once, and output state as the State Engine (or an injected ST-STATE protocol) requires. State matches the prose.
+'@
 $bolt = Get-Prompt '634ecfec-1862-4ce0-821e-e31057acadfa'
-$bolt.name = '⚡ BOLT Turn Engine'
-$bolt.content = $boltContent
+$bolt.name = '⚡ BOLT Turn Plan'
+$bolt.content = $boltContent.Trim()
+$bolt.role = 'assistant'
 Set-PromptEnabled $bolt $true
+
+$preset.reasoning_effort = 'high'
 
 $markerIds = @(
   'worldInfoBefore',
@@ -892,11 +677,11 @@ $preset.extensions.regex_scripts += @(
 )
 
 $json = $preset | ConvertTo-Json -Depth 100
-Set-Content -LiteralPath $Output -Value $json -Encoding utf8NoBOM
+Write-Utf8File $Output $json
 
 if ($RegexOutput) {
   $regexJson = $preset.extensions.regex_scripts | ConvertTo-Json -Depth 100
-  Set-Content -LiteralPath $RegexOutput -Value $regexJson -Encoding utf8NoBOM
+  Write-Utf8File $RegexOutput $regexJson
 }
 
 [pscustomobject]@{
@@ -905,6 +690,6 @@ if ($RegexOutput) {
   Prompts = $preset.prompts.Count
   OrderEntries = $preset.prompt_order[0].order.Count
   RegexScripts = $preset.extensions.regex_scripts.Count
-  BoltSource = $boltSourceLabel
+  ReasoningEffort = $preset.reasoning_effort
 } | ConvertTo-Json
 
