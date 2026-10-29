@@ -10,6 +10,7 @@
 - Build script runs on Windows PowerShell 5.1 as well as PowerShell 7.
 - Rewrote the banned vocabulary as grouped bans with replacements; narrowed `spine`, `meat`, and `slick` to their cliché uses and dropped `asset`, `vice`, and `breast`.
 - Added Lexicon regex scripts that remove or rewrite "a beat" in saved AI replies.
+- Limited narration to two em dashes per reply, with alternatives, and removed em dashes from the enabled prompt text.
 
 ## 0.4-eval
 
