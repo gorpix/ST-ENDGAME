@@ -171,42 +171,6 @@ $sourceScenePrompt = $preset.prompts | Where-Object identifier -eq 'f52c1001-6f8
 if ($sourceScenePrompt) {
   $sourceSceneContent = Remove-PromptComments $sourceScenePrompt.content
 }
-$sourceGfxContent = '<gfx_protocol></gfx_protocol>'
-$gfxReliabilityContent = @'
-<gfx_reliability>
-gate:ignore this whole block unless ST-STATE injected an ST_STATE_HANDSHAKE with mode=SHADOW or mode=NATIVE this turn; never mention it otherwise
-trigger:PC receives,notices,views,reads,opens,or uses an in-world visual medium
-result:prepare one local-renderer hint; never output artifact HTML,CSS,JSON,script,markdown fence,or UI description
-knowledge:include only artifact content visibly available to PC; never expose thoughts,hidden state,private knowledge,or GM data
-legacyWrapper:GFX_START/GFX_END reserved only for complete internal_states; never use it for a visual artifact
-noTrigger:no ST_GFX on OOC or FLASH turns, or when nothing visual is shown
-</gfx_reliability>
-'@
-$gfxTransportContent = @'
-<gfx_transport>
-owner:ST-STATE local DOM renderer; advisory display only; never canonical state
-placement:SHADOW NORMAL after complete internal_states/GFX_END and ST_PATCH; NATIVE NORMAL after ST_PATCH; max one block; final control in response
-format:
-<!--ST_GFX
-V1
-kind=[terminal|phone|paper|map|notice|credential|transaction|web|broadcast|data|image|monitor|media]
-mode=NORMAL
-visibility=visible
-platform=[ios|android] (phone only; follow established device, never mix skins)
-layout=[chat|notification|call|email] (phone only)
-title=[plain single-line title]
-subtitle=[optional plain single-line subtitle]
-source=[optional sender,issuer,app,device,or channel]
-duration=7000
-row|[received|sent|system|item|warning]|[label]|[time or empty]|[plain single-line text]
--->
-rules:1-16 rows; at least one row; omit non-applicable optional headers; phone rows use received/sent direction; non-phone rows use item/system/warning; literal pipes allowed only in final text; no tags,markup,placeholders,or secret/internal labels
-phone:ios and android are distinct local skins; chat/notification/call/email choose the fitting local layout
-aliases:letter,note->paper; screen,display->web; radio->broadcast
-</gfx_transport>
-'@
-$sourceGfxContent = $sourceGfxContent.Replace('</gfx_protocol>', "$($gfxReliabilityContent.Trim())`n`n$($gfxTransportContent.Trim())`n`n</gfx_protocol>")
-
 # Keep source Main verbatim, then merge the remaining active prose modules around it.
 $coreExtensions = [regex]::Match($coreContent, '(?s)<header_instructions>.*?(?=<gfx_protocol>)').Value
 $coreExtensions = $coreExtensions.Replace('- Register sensory/appearance detail once; omit for 4 messages unless spatial shift, contact, kinetic change, or new relevance occurs. PC is habituated to own traits; show NPC response. Anatomy in motion may recur.', '')
@@ -253,7 +217,6 @@ $lexiconDialogueContent = Join-PromptBlocks @(
   (Get-TaggedBlock $coreExtensions 'banned_vocabulary'),
   (Get-TaggedBlock $coreExtensions 'colored_dialogue')
 )
-$gfxModuleContent = $sourceGfxContent.Trim()
 
 # Personal unified state engine.
 $stateContent = @'
@@ -399,10 +362,9 @@ $npcModule = New-PromptModule $main 'f52c1003-6f87-4e96-955d-0185f8f12c03' '🎭
 $adultModule = New-PromptModule $main 'f52c1004-6f87-4e96-955d-0185f8f12c04' '🔞 Adult Mode' $adultContent $true
 $combatGenesisModule = New-PromptModule $main 'f52c1005-6f87-4e96-955d-0185f8f12c05' '⚔️ Combat & NPC Creation' $combatGenesisContent $true
 $lexiconDialogueModule = New-PromptModule $main 'f52c1006-6f87-4e96-955d-0185f8f12c06' '🗣️ Lexicon & Dialogue Color' $lexiconDialogueContent $true
-# Off by default: GFX only works with ST-STATE in SHADOW/NATIVE, and ST-STATE
-# does not inject these rules itself, so enable this alongside it.
-$gfxModule = New-PromptModule $main 'f52c1007-6f87-4e96-955d-0185f8f12c07' '🖼️ Pop-In Graphics (enable with ST-STATE)' $gfxModuleContent $false
-$rpModules = @($sceneModule, $proseModule, $npcModule, $adultModule, $combatGenesisModule, $lexiconDialogueModule, $gfxModule)
+# No GFX prompt: ST-STATE injects the ST_GFX rules itself in SHADOW/NATIVE
+# while its local GFX setting is on.
+$rpModules = @($sceneModule, $proseModule, $npcModule, $adultModule, $combatGenesisModule, $lexiconDialogueModule)
 
 $state = Get-Prompt '019f62e8-892f-7027-93ef-159f3d55c410'
 $state.name = '🎮 Unified State Engine'

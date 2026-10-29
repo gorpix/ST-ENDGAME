@@ -138,22 +138,6 @@
                         "enabled":  true
                     },
                     {
-                        "identifier":  "f52c1007-6f87-4e96-955d-0185f8f12c07",
-                        "name":  "🖼️ Pop-In Graphics (enable with ST-STATE)",
-                        "system_prompt":  true,
-                        "marker":  false,
-                        "content":  "\u003cgfx_protocol\u003e\u003cgfx_reliability\u003e\ngate:ignore this whole block unless ST-STATE injected an ST_STATE_HANDSHAKE with mode=SHADOW or mode=NATIVE this turn; never mention it otherwise\ntrigger:PC receives,notices,views,reads,opens,or uses an in-world visual medium\nresult:prepare one local-renderer hint; never output artifact HTML,CSS,JSON,script,markdown fence,or UI description\nknowledge:include only artifact content visibly available to PC; never expose thoughts,hidden state,private knowledge,or GM data\nlegacyWrapper:GFX_START/GFX_END reserved only for complete internal_states; never use it for a visual artifact\nnoTrigger:no ST_GFX on OOC or FLASH turns, or when nothing visual is shown\n\u003c/gfx_reliability\u003e\n\n\u003cgfx_transport\u003e\nowner:ST-STATE local DOM renderer; advisory display only; never canonical state\nplacement:SHADOW NORMAL after complete internal_states/GFX_END and ST_PATCH; NATIVE NORMAL after ST_PATCH; max one block; final control in response\nformat:\n\u003c!--ST_GFX\nV1\nkind=[terminal|phone|paper|map|notice|credential|transaction|web|broadcast|data|image|monitor|media]\nmode=NORMAL\nvisibility=visible\nplatform=[ios|android] (phone only; follow established device, never mix skins)\nlayout=[chat|notification|call|email] (phone only)\ntitle=[plain single-line title]\nsubtitle=[optional plain single-line subtitle]\nsource=[optional sender,issuer,app,device,or channel]\nduration=7000\nrow|[received|sent|system|item|warning]|[label]|[time or empty]|[plain single-line text]\n--\u003e\nrules:1-16 rows; at least one row; omit non-applicable optional headers; phone rows use received/sent direction; non-phone rows use item/system/warning; literal pipes allowed only in final text; no tags,markup,placeholders,or secret/internal labels\nphone:ios and android are distinct local skins; chat/notification/call/email choose the fitting local layout\naliases:letter,note-\u003epaper; screen,display-\u003eweb; radio-\u003ebroadcast\n\u003c/gfx_transport\u003e\n\n\u003c/gfx_protocol\u003e",
-                        "role":  "system",
-                        "injection_position":  0,
-                        "injection_depth":  4,
-                        "forbid_overrides":  false,
-                        "injection_order":  100,
-                        "injection_trigger":  [
-
-                                              ],
-                        "enabled":  false
-                    },
-                    {
                         "identifier":  "worldInfoBefore",
                         "name":  "Lorebook Before",
                         "system_prompt":  true,
@@ -293,10 +277,6 @@
                                            {
                                                "identifier":  "f52c1006-6f87-4e96-955d-0185f8f12c06",
                                                "enabled":  true
-                                           },
-                                           {
-                                               "identifier":  "f52c1007-6f87-4e96-955d-0185f8f12c07",
-                                               "enabled":  false
                                            },
                                            {
                                                "identifier":  "worldInfoBefore",

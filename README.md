@@ -21,7 +21,7 @@ Native is evaluative. Unsupported state domains remain compatibility-backed; see
 1. In **AI Response Configuration**, import `ST-ENDGAME v0.5.json` as a preset.
 2. In SillyTavern's extensions panel, choose **Install extension**, enter `https://github.com/gorpix/ST-STATE`, and install/enable the extension.
 3. Import the Regex Suite only if the preset does not already contain its scripts.
-4. Using ST-STATE in SHADOW or NATIVE mode? Also enable the **🖼️ Pop-In Graphics (enable with ST-STATE)** prompt. It is off by default because GFX does nothing in LEGACY mode.
+4. Pop-In GFX needs nothing in the preset: in SHADOW or NATIVE mode, ST-STATE (newer than 0.4.4-eval.3) adds the GFX rules itself while GFX is on in its settings.
 
 ## Development
 
@@ -31,7 +31,7 @@ Edit `build_st_endgame.ps1`, then build and inspect the generated preset before 
 powershell -NoProfile -ExecutionPolicy Bypass -File build_st_endgame.ps1 -Source "ST-ENDGAME v0.5.json" -Output "ST-ENDGAME v0.5.json" -RegexOutput "ST-ENDGAME Regex Suite v0.5.json"
 ```
 
-`-Source` supplies the base settings, prompt order, kernel, and scene-intro blocks. Every other prompt (BOLT, FLASH, State Engine, prose modules, GFX) is defined in the script and overwrites the source.
+`-Source` supplies the base settings, prompt order, kernel, and scene-intro blocks. Every other prompt (BOLT, FLASH, State Engine, prose modules) is defined in the script and overwrites the source.
 
 ## License
 
