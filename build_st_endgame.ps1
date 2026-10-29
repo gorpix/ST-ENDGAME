@@ -152,7 +152,13 @@ Short blunt landings that close a long branching observation look like:
 </npc_creation>
 
 <banned_vocabulary>
-Strictly prohibited in every response; replace: fresh meat; spine; breath hitching; breath catching; husky; catching in throat; pupils blown wide; pupils dilated; predatory; ozone; meat; asset; shivers down spine; nails biting; velvet; vise; vice; structural integrity; deep curve; furnace; throaty; calloused; guttural; slick; unadulterated; jaw clenched; jaw working; barely above a whisper; musk; breast; a beat; wrecked; gremlin; goblin.
+Never write these; write what follows the colon instead.
+- "a beat" in any form (A beat. / for a beat / a beat too long): show what fills the pause (a movement, a sound, a glance) or cut the pause.
+- Voices "wrecked", "husky", "throaty", "guttural", "barely above a whisper": say what the voice does (cracks, drops, goes rough, thins, catches on a word).
+- "jaw working", "jaw clenched", "breath hitching", "breath catching", "catching in throat": show the strain through what they do or leave unsaid.
+- "pupils blown wide", "pupils dilated", "shivers down spine", "nails biting": one specific physical detail this character would show.
+- "predatory", "furnace", "velvet", "vise", "ozone", "musk", "calloused", "structural integrity", "deep curve", "unadulterated", "fresh meat", "gremlin", "goblin": a concrete word fitted to this character and moment.
+- "slick" only for something literally wet; "spine" and "meat" only as plain anatomy.
 </banned_vocabulary>
 
 <colored_dialogue>
@@ -410,18 +416,24 @@ $flash.name = '⚡ FLASH Mode Router (Toggle)'
 $flash.content = $flashContent.Trim()
 Set-PromptEnabled $flash $true
 
-# BOLT is a short goals list, sent as the assistant's own note at depth 0.
-# Reasoning models plan well on their own; a mandatory step-by-step script
-# only made them think longer.
+# BOLT is a short numbered plan, sent as the assistant's own note at depth 0.
+# Each step names a decision, not a procedure to write out: v0.4's drafted
+# probes, per-turn checklist, and state-format rules made models think longer
+# without writing better. Steps that do not apply are skipped.
 $boltContent = @'
-{{//BOLT v0.5: short turn plan, sent as an assistant message.}}{{trim}}
-(My private plan for this turn. I think in brief notes, not drafted prose, then write the reply once. I never show this plan.)
-- Route: OOC means I pause the scene and answer directly, with no roll, time advance, or state. FLASH per <flash_router> means I follow its handoff and stop. Anything else is a NORMAL turn.
-- Ground: where everyone is, what they hold, what is unresolved, and who knows what. Every fact this turn does not change stays as it was.
-- NPCs: each relevant NPC acts from their own persona, goal, mood, and knowledge, and commits to one coherent action sequence. I take the most interesting path that respects physics, knowledge limits, and {{user}}'s autonomy.
-- Dice: only for a completed, nontrivial skilled action. I lock the DC first, then use the roll (that actor's injected ST_DICE_POOL roll if present, otherwise User {{roll::1d20}} | NPC {{roll::1d20}}). The result stands.
-- Write: header first, then the reply in the house voice, stopping where {{user}} must choose or act. I never write {{user}}'s actions, words, thoughts, or feelings.
-- State: I apply only what changed, once, and output state as the State Engine (or an injected ST-STATE protocol) requires. State matches the prose.
+{{//BOLT v0.5: turn plan, sent as an assistant message.}}{{trim}}
+(My private plan for this turn. Terse fragments and IDs, not prose. I skip steps that do not apply, never draft the reply or the state here, and write the reply once. I never show this plan.)
+1 ROUTE: OOC means I pause the scene and answer directly, with no roll, time advance, or state. If <flash_router> is active and picks FLASH, I follow its handoff and stop. Otherwise NORMAL.
+2 READ: what {{user}} did, said, and implied: subtext, signals, and what they want from the scene.
+3 GROUND: positions, held items, unresolved actions, spotlight, and who knows what; any new canon. Every fact this turn does not change stays as it was.
+4 NPCS: for each relevant NPC, their goal or need, mood and instinct, bond and residue toward whoever is present, and what they notice and can do.
+5 OPTIONS: 1-3 paths, each already true to persona, knowledge, physics, capability, continuity, and {{user}}'s autonomy. They differ in tactic, not in rule-following; no strawmen.
+6 PICK: the most interesting path; one coherent action sequence per NPC; the subtext each NPC lets show.
+7 ROLL: only for a completed, nontrivial skilled action. I lock the actor and DC first, then use that actor's injected ST_DICE_POOL roll if present, otherwise User {{roll::1d20}} | NPC {{roll::1d20}}. Tier and consequence; the result stands.
+8 SHAPE: header time, day, place, and weather changes; viewpoint and lens; 1-3 sensory anchors; each speaker's goal, tactic, and tone, not their lines; where the reply stops so {{user}} must choose or act.
+9 CHECK: I never write {{user}}'s actions, words, thoughts, or feelings; persona and voice hold; NPCs act only on what they know and notice; nothing from <banned_vocabulary>, above all "a beat", "wrecked", "jaw working", and "slick" for anything not wet, and no echoed earlier phrasing; adult and combat rules when active. I fix problems in the plan, not in a draft.
+10 STATE: only what changed, applied once, output as the State Engine or an injected ST-STATE protocol requires. State matches the prose.
+Then I write, starting with the exact bracketed header line from <header_instructions> (never a markdown heading), then the reply in the house voice per <prose_rules>.
 '@
 $bolt = Get-Prompt '634ecfec-1862-4ce0-821e-e31057acadfa'
 $bolt.name = '⚡ BOLT Turn Plan'
@@ -490,8 +502,15 @@ $legacyRegexNameById = @{
   '00af7576-6ccd-4461-a425-4be314df90b4' = 'ST-ENDGAME - Image Prompt Stripper'
   '83921751-fa26-49cb-9954-7315b3e84f54' = 'ST-ENDGAME - Context Saver'
 }
+$lexiconRegexIds = @(
+  'f52b7001-6f87-4e96-955d-0185f8f11e01',
+  'f52b7002-6f87-4e96-955d-0185f8f11e02',
+  'f52b7003-6f87-4e96-955d-0185f8f11e03',
+  'f52b7004-6f87-4e96-955d-0185f8f11e04',
+  'f52b7005-6f87-4e96-955d-0185f8f11e05'
+)
 $preset.extensions.regex_scripts = @(
-  $preset.extensions.regex_scripts | Where-Object { $_.id -notin $stateRegexIds }
+  $preset.extensions.regex_scripts | Where-Object { $_.id -notin ($stateRegexIds + $lexiconRegexIds) }
 )
 
 foreach ($regex in $preset.extensions.regex_scripts) {
@@ -624,6 +643,42 @@ $sceneWorldDashboardRegex = New-StateUiRegex `
   '/(^|<br\s*\/?>)\s*-\s*Spotlight:\s*([^|<\r\n]*?)\s*\|\s*Open Beat:\s*([^|<\r\n]*?)\s*\|\s*Time Pressure:\s*([^<\r\n]*?)\s*<br\s*\/?>\s*-\s*Env:\s*([^|<\r\n]*?)\s*\|\s*Positions:\s*([^<\r\n]*?)(?=\r?\n|<br\s*\/?>|<\/div>|<\/details>|$)/gim' `
   '$1<div style="background:linear-gradient(135deg,rgba(30,30,46,.95),rgba(17,24,39,.9));border:1px solid rgba(137,180,250,.27);border-left:3px solid #89b4fa;border-radius:7px;padding:10px 11px;margin:7px 0 10px;box-shadow:0 3px 10px #0004;"><div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:8px;"><b style="color:#cdd6f4;">◉ $2</b><span style="margin-left:auto;background:rgba(243,139,168,.08);border:1px solid rgba(243,139,168,.2);color:#f38ba8;border-radius:999px;padding:2px 8px;font-size:.76em;">TIME · $4</span></div><div style="color:#cdd6f4;margin-bottom:8px;"><span style="color:#89b4fa;font-size:.72em;font-weight:bold;">OPEN BEAT</span><br>$3</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:7px;"><div style="background:rgba(166,227,161,.06);border:1px solid rgba(166,227,161,.18);border-radius:6px;padding:8px;"><span style="color:#a6e3a1;font-size:.7em;font-weight:bold;">ENVIRONMENT</span><br>$5</div><div style="background:rgba(203,166,247,.06);border:1px solid rgba(203,166,247,.18);border-radius:6px;padding:8px;"><span style="color:#cba6f7;font-size:.7em;font-weight:bold;">POSITIONS</span><br>$6</div></div></div>'
 
+# "a beat" is the model's strongest banned habit, and a prompt ban alone does
+# not hold (159 uses across past chats). These rewrite the saved AI reply, not
+# just its display, and run in this order: drop it as a standalone sentence,
+# fix idioms, then turn any remaining "a beat" into "a moment".
+function New-LexiconRegex([string]$Id, [string]$Name, [string]$Find, [string]$Replace) {
+  return [pscustomobject]@{
+    id = $Id
+    scriptName = $Name
+    findRegex = $Find
+    replaceString = $Replace
+    trimStrings = @()
+    placement = @(2)
+    disabled = $false
+    markdownOnly = $false
+    promptOnly = $false
+    runOnEdit = $true
+    substituteRegex = 0
+    minDepth = $null
+    maxDepth = $null
+  }
+}
+
+$lexiconRegexes = @(
+  (New-LexiconRegex $lexiconRegexIds[0] 'ST-ENDGAME Lexicon - "A beat." paragraph' `
+    '/^[ \t]*(?:Then,? )?(?:A|Another|One)(?: (?:long|short|brief|single|slow|heavy))? beat(?: passes| goes by)?[.…!][ \t]*\r?\n(?:[ \t]*\r?\n)?/gim' ''),
+  (New-LexiconRegex $lexiconRegexIds[1] 'ST-ENDGAME Lexicon - "A beat." sentence' `
+    '/(?<=(?:^|[.!?…"”*)])[ \t]*)(?:Then,? )?(?:A|Another|One)(?: (?:long|short|brief|single|slow|heavy))? beat(?: passes| goes by)?[.…!][ \t]*/gm' ''),
+  (New-LexiconRegex $lexiconRegexIds[2] 'ST-ENDGAME Lexicon - "without missing a beat"' `
+    '/\bwithout (?:missing a beat|a beat of hesitation)\b/gi' 'without hesitation'),
+  (New-LexiconRegex $lexiconRegexIds[3] 'ST-ENDGAME Lexicon - "half a beat"' `
+    '/\bhalf a beat\b/g' 'an instant'),
+  (New-LexiconRegex $lexiconRegexIds[4] 'ST-ENDGAME Lexicon - "a beat" to "a moment"' `
+    '/\b([Aa]) beat\b(?!-|\s+(?:cop|cops|poet|box|drop|maker)\b)/g' '$1 moment')
+)
+
+$preset.extensions.regex_scripts += $lexiconRegexes
 $preset.extensions.regex_scripts += @(
   $bondsPanelRegex,
   $bondProfileRegex,

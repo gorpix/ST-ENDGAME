@@ -285,6 +285,101 @@
         "maxDepth":  null
     },
     {
+        "id":  "f52b7001-6f87-4e96-955d-0185f8f11e01",
+        "scriptName":  "ST-ENDGAME Lexicon - \"A beat.\" paragraph",
+        "findRegex":  "/^[ \\t]*(?:Then,? )?(?:A|Another|One)(?: (?:long|short|brief|single|slow|heavy))? beat(?: passes| goes by)?[.…!][ \\t]*\\r?\\n(?:[ \\t]*\\r?\\n)?/gim",
+        "replaceString":  "",
+        "trimStrings":  [
+
+                        ],
+        "placement":  [
+                          2
+                      ],
+        "disabled":  false,
+        "markdownOnly":  false,
+        "promptOnly":  false,
+        "runOnEdit":  true,
+        "substituteRegex":  0,
+        "minDepth":  null,
+        "maxDepth":  null
+    },
+    {
+        "id":  "f52b7002-6f87-4e96-955d-0185f8f11e02",
+        "scriptName":  "ST-ENDGAME Lexicon - \"A beat.\" sentence",
+        "findRegex":  "/(?\u003c=(?:^|[.!?…\"”*)])[ \\t]*)(?:Then,? )?(?:A|Another|One)(?: (?:long|short|brief|single|slow|heavy))? beat(?: passes| goes by)?[.…!][ \\t]*/gm",
+        "replaceString":  "",
+        "trimStrings":  [
+
+                        ],
+        "placement":  [
+                          2
+                      ],
+        "disabled":  false,
+        "markdownOnly":  false,
+        "promptOnly":  false,
+        "runOnEdit":  true,
+        "substituteRegex":  0,
+        "minDepth":  null,
+        "maxDepth":  null
+    },
+    {
+        "id":  "f52b7003-6f87-4e96-955d-0185f8f11e03",
+        "scriptName":  "ST-ENDGAME Lexicon - \"without missing a beat\"",
+        "findRegex":  "/\\bwithout (?:missing a beat|a beat of hesitation)\\b/gi",
+        "replaceString":  "without hesitation",
+        "trimStrings":  [
+
+                        ],
+        "placement":  [
+                          2
+                      ],
+        "disabled":  false,
+        "markdownOnly":  false,
+        "promptOnly":  false,
+        "runOnEdit":  true,
+        "substituteRegex":  0,
+        "minDepth":  null,
+        "maxDepth":  null
+    },
+    {
+        "id":  "f52b7004-6f87-4e96-955d-0185f8f11e04",
+        "scriptName":  "ST-ENDGAME Lexicon - \"half a beat\"",
+        "findRegex":  "/\\bhalf a beat\\b/g",
+        "replaceString":  "an instant",
+        "trimStrings":  [
+
+                        ],
+        "placement":  [
+                          2
+                      ],
+        "disabled":  false,
+        "markdownOnly":  false,
+        "promptOnly":  false,
+        "runOnEdit":  true,
+        "substituteRegex":  0,
+        "minDepth":  null,
+        "maxDepth":  null
+    },
+    {
+        "id":  "f52b7005-6f87-4e96-955d-0185f8f11e05",
+        "scriptName":  "ST-ENDGAME Lexicon - \"a beat\" to \"a moment\"",
+        "findRegex":  "/\\b([Aa]) beat\\b(?!-|\\s+(?:cop|cops|poet|box|drop|maker)\\b)/g",
+        "replaceString":  "$1 moment",
+        "trimStrings":  [
+
+                        ],
+        "placement":  [
+                          2
+                      ],
+        "disabled":  false,
+        "markdownOnly":  false,
+        "promptOnly":  false,
+        "runOnEdit":  true,
+        "substituteRegex":  0,
+        "minDepth":  null,
+        "maxDepth":  null
+    },
+    {
         "id":  "f52b6001-6f87-4e96-955d-0185f8f11d01",
         "scriptName":  "ST-STATE UI - Bonds Panel",
         "findRegex":  "/\u003cdetails(?:\\s[^\u003e]*)?\u003e\\s*\u003csummary(?:\\s[^\u003e]*)?\u003e([^\u003c]*?)(BONDS|BOND TRACKER)([^\u003c]*?)\u003c\\/summary\u003e([\\s\\S]*?)\u003c\\/details\u003e/gi",

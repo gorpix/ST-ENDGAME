@@ -5,7 +5,7 @@ SillyTavern roleplay preset with a short BOLT turn plan, durable state, relation
 ## Contents
 
 - `ST-ENDGAME v0.5.json` — importable completion preset.
-- `ST-ENDGAME Regex Suite v0.5.json` — optional dashboard and GFX regex scripts.
+- `ST-ENDGAME Regex Suite v0.5.json` — optional dashboard, GFX, and lexicon regex scripts. The lexicon scripts rewrite "a beat" in the saved AI reply.
 - `build_st_endgame.ps1` — editable preset builder.
 
 ## Modes
