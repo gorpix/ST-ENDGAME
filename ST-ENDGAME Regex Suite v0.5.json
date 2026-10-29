@@ -380,6 +380,25 @@
         "maxDepth":  null
     },
     {
+        "id":  "f52b7006-6f87-4e96-955d-0185f8f11e06",
+        "scriptName":  "ST-ENDGAME Lexicon - narration em dash to comma",
+        "findRegex":  "/(?\u003c=[\\p{L}\\p{N})*’\u0027])(?\u003c!^\\[[^\\n]*)[ \\t]*—[ \\t]*(?=[\\p{L}\\p{N}(‘\u0027*])(?=(?:[^\"“”\\n]*[\"“”][^\"“”\\n]*[\"“”])*[^\"“”\\n]*$)/gmu",
+        "replaceString":  ", ",
+        "trimStrings":  [
+
+                        ],
+        "placement":  [
+                          2
+                      ],
+        "disabled":  false,
+        "markdownOnly":  false,
+        "promptOnly":  false,
+        "runOnEdit":  true,
+        "substituteRegex":  0,
+        "minDepth":  null,
+        "maxDepth":  null
+    },
+    {
         "id":  "f52b6001-6f87-4e96-955d-0185f8f11d01",
         "scriptName":  "ST-STATE UI - Bonds Panel",
         "findRegex":  "/\u003cdetails(?:\\s[^\u003e]*)?\u003e\\s*\u003csummary(?:\\s[^\u003e]*)?\u003e([^\u003c]*?)(BONDS|BOND TRACKER)([^\u003c]*?)\u003c\\/summary\u003e([\\s\\S]*?)\u003c\\/details\u003e/gi",

@@ -78,7 +78,7 @@ Scene/NPCs: third-person limited. PC bodily sensations/results: second person. F
 - Enrich dialogue, expressions, reveals, and emotional turns. Keep backgrounds, transitions, and functional objects plain.
 - Render physical reactions through observable posture, movement, voice, distance, touch, pace, and object use. Integrate traits through tactile detail, movement, light, shadow, clothing, surfaces, and space.
 - Build urgency turn by turn from established stakes, obstacles, elapsed time, immediate consequences, and explicit cause/effect.
-- Narration outside quoted dialogue uses at most two em dashes per reply. Instead: commas or parentheses for an aside, a period for a hard stop, a colon before a reveal or list, a semicolon between linked clauses. Dialogue may still use dashes for interruptions and trailing off.
+- Em dashes belong to dialogue only, for interruptions and trailing off. Narration never uses them: commas or parentheses for an aside, a period for a hard stop, a colon before a reveal or list, a semicolon between linked clauses.
 </craft>
 <description_state>
 - Register sensory/appearance detail once; omit for 4 messages unless spatial shift, contact, kinetic change, or new relevance occurs. Treat PC traits as habituated; show NPC response. Anatomy in motion may recur.
@@ -432,7 +432,7 @@ $boltContent = @'
 6 PICK: the most interesting path; one coherent action sequence per NPC; the subtext each NPC lets show.
 7 ROLL: only for a completed, nontrivial skilled action. I lock the actor and DC first, then use that actor's injected ST_DICE_POOL roll if present, otherwise User {{roll::1d20}} | NPC {{roll::1d20}}. Tier and consequence; the result stands.
 8 SHAPE: header time, day, place, and weather changes; viewpoint and lens; 1-3 sensory anchors; each speaker's goal, tactic, and tone, not their lines; where the reply stops so {{user}} must choose or act.
-9 CHECK: I never write {{user}}'s actions, words, thoughts, or feelings; persona and voice hold; NPCs act only on what they know and notice; nothing from <banned_vocabulary>, above all "a beat", "wrecked", "jaw working", and "slick" for anything not wet, and no echoed earlier phrasing; at most two em dashes in narration; adult and combat rules when active. I fix problems in the plan, not in a draft.
+9 CHECK: I never write {{user}}'s actions, words, thoughts, or feelings; persona and voice hold; NPCs act only on what they know and notice; nothing from <banned_vocabulary>, above all "a beat", "wrecked", "jaw working", and "slick" for anything not wet, and no echoed earlier phrasing; em dashes only inside dialogue; adult and combat rules when active. I fix problems in the plan, not in a draft.
 10 STATE: only what changed, applied once, output as the State Engine or an injected ST-STATE protocol requires. State matches the prose.
 Then I write. The first line is the header in exactly this shape, emojis and the words Time and Day included: [ 🕰️ Time HH:MM AM/PM | 🗓️ Day # - DayOfWeek, Month DD, YYYY Era | 📍 General Location - Specific Area | [Emoji] Weather, Temp °F ]. Then the reply in the house voice per <prose_rules>.
 '@
@@ -508,7 +508,8 @@ $lexiconRegexIds = @(
   'f52b7002-6f87-4e96-955d-0185f8f11e02',
   'f52b7003-6f87-4e96-955d-0185f8f11e03',
   'f52b7004-6f87-4e96-955d-0185f8f11e04',
-  'f52b7005-6f87-4e96-955d-0185f8f11e05'
+  'f52b7005-6f87-4e96-955d-0185f8f11e05',
+  'f52b7006-6f87-4e96-955d-0185f8f11e06'
 )
 $preset.extensions.regex_scripts = @(
   $preset.extensions.regex_scripts | Where-Object { $_.id -notin ($stateRegexIds + $lexiconRegexIds) }
@@ -666,6 +667,12 @@ function New-LexiconRegex([string]$Id, [string]$Name, [string]$Find, [string]$Re
   }
 }
 
+# A here-string, because PowerShell treats the curly quotes in this pattern
+# as string delimiters inside an ordinary '...' string.
+$emDashFind = @'
+/(?<=[\p{L}\p{N})*’'])(?<!^\[[^\n]*)[ \t]*—[ \t]*(?=[\p{L}\p{N}(‘'*])(?=(?:[^"“”\n]*["“”][^"“”\n]*["“”])*[^"“”\n]*$)/gmu
+'@
+
 $lexiconRegexes = @(
   (New-LexiconRegex $lexiconRegexIds[0] 'ST-ENDGAME Lexicon - "A beat." paragraph' `
     '/^[ \t]*(?:Then,? )?(?:A|Another|One)(?: (?:long|short|brief|single|slow|heavy))? beat(?: passes| goes by)?[.…!][ \t]*\r?\n(?:[ \t]*\r?\n)?/gim' ''),
@@ -676,7 +683,11 @@ $lexiconRegexes = @(
   (New-LexiconRegex $lexiconRegexIds[3] 'ST-ENDGAME Lexicon - "half a beat"' `
     '/\bhalf a beat\b/g' 'an instant'),
   (New-LexiconRegex $lexiconRegexIds[4] 'ST-ENDGAME Lexicon - "a beat" to "a moment"' `
-    '/\b([Aa]) beat\b(?!-|\s+(?:cop|cops|poet|box|drop|maker)\b)/g' '$1 moment')
+    '/\b([Aa]) beat\b(?!-|\s+(?:cop|cops|poet|box|drop|maker)\b)/g' '$1 moment'),
+  # Narration em dashes between two words become commas (pairs become comma
+  # pairs). Dialogue is skipped by checking that the rest of the paragraph
+  # holds an even number of quote marks, and the bracketed header is skipped.
+  (New-LexiconRegex $lexiconRegexIds[5] 'ST-ENDGAME Lexicon - narration em dash to comma' $emDashFind ', ')
 )
 
 $preset.extensions.regex_scripts += $lexiconRegexes
