@@ -22,7 +22,7 @@ Native is evaluative. Unsupported state domains remain compatibility-backed; see
 2. In SillyTavern's extensions panel, choose **Install extension**, enter `https://github.com/gorpix/ST-STATE`, and install/enable the extension.
 3. Import the Regex Suite only if the preset does not already contain its scripts.
 4. Pop-In GFX needs nothing in the preset: in SHADOW or NATIVE mode, ST-STATE (newer than 0.4.4-eval.3) adds the GFX rules itself while GFX is on in its settings.
-5. Bring your own jailbreak if your model needs one: the preset ships none. Put it in the **Post-History Instructions** prompt (sent last, after BOLT) or in an in-chat Author's Note at depth 0 with the System role (sent just before BOLT). A character card's post-history instructions also fill that prompt.
+5. The preset's jailbreak is the **🔞 Adult Mode** prompt. Some models need a different one; bring your own and put it in the **Post-History Instructions** prompt (sent last, after BOLT) or in an in-chat Author's Note at depth 0 with the System role (sent just before BOLT). A character card's post-history instructions also fill that prompt.
 
 ## Development
 
