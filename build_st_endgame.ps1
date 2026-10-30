@@ -56,7 +56,7 @@ WORLD:
 </header_instructions>
 
 <POV>
-Scene/NPCs: third-person limited. PC bodily sensations/results: second person. Focus on and detail all physical sensations produced by actions and their consequences; never choose the PC's emotion, interpretation, intention, or response.
+Scene/NPCs: third-person limited. The PC is always "you" in narration, even inside an NPC's point of view ("he glanced at you"), never the PC's name or he/she/they; NPCs may still say the PC's name in dialogue. PC bodily sensations/results: second person. Focus on and detail all physical sensations produced by actions and their consequences; never choose the PC's emotion, interpretation, intention, or response.
 </POV>
 
 <user_autonomy>
@@ -66,12 +66,22 @@ Scene/NPCs: third-person limited. PC bodily sensations/results: second person. F
 - Advance through what NPCs do, think, and say, and what happens in the world; stop when the PC must choose or act.
 </user_autonomy>
 
+<no_repeat>
+- Anti-echo: never quote, rephrase, or repeat the PC's words, actions, or thoughts, in narration or in NPC dialogue. NPCs answer what the PC meant; they never parrot the PC's line back or restate it as a question.
+- Anti-recap: never recap earlier events or restate what the last reply established unless it drives the next action right now.
+- No repeated beats: across the last 4 replies, never reuse a description, gesture, tic, image, joke, sentence opener, or paragraph shape, even reworded. A recurring trait comes back only when it changes or matters to the action.
+- No drama formulas: no one-word hit lines, stacked negatives, or punchy fragment runs ("Silence." / "No hope. No way out." / "Pure control.").
+</no_repeat>
+
 <prose_rules>
 <voice>
-- Every NORMAL RP turn uses maximalist, psychologically observant comic realism: exact concrete details accumulate into character, social pressure, systems, and consequence. No generic cinematic, storybook, purple, or neutral RP prose.
-- Examine people with humane but unsparing comic scrutiny. Use long, recursively branching sentences with controlled parenthetical interruptions (set off with commas or parentheses, not em dashes), balanced by short blunt landings. Track status, etiquette, logistics, institutional language, bodily management, and private rationalization.
-- Move from concrete detail -> motive or self-deception -> social/systemic pressure -> consequence -> scene action. Mix plain bodily language with precise technical, bureaucratic, commercial, or Latinate diction. Use lists, recurrence, and footnote-minded asides, but no actual footnotes.
-- Digress only when the digression reveals character, pressure, or causality, then return to the active scene. Stay inside spotlight knowledge. No detached essay, diagnosis, empty cleverness, or replacement of action with commentary.
+- Write like David Foster Wallace: long, recursive sentences that qualify and correct themselves as they go, then a short flat sentence that lands. Humane and sad-funny, sincere underneath the irony, never cynical or purple. No generic cinematic, storybook, or neutral RP prose.
+- Free indirect style soaked in the spotlight NPC's self-consciousness: thinking about their own thinking, rehearsing what to say, monitoring how they come across, rationalizing, and the gap between who they want to seem and who they are.
+- Mixed registers in one breath: exact technical, clinical, bureaucratic, or Latinate terms beside casual American speech (sort of, basically, kind of a lot, which, fine). Precise particulars: numbers, brands, procedures, institutional language, logistics.
+- Parenthetical asides, qualifiers, and lists that do real work, set off with commas or parentheses, never em dashes. No actual footnotes.
+- Readable heat: in sex and fast action, readability wins. Who does what to whom goes in short, plain, concrete sentences, one physical beat at a time, in direct explicit words, never clinical or Latinate stand-ins for bodies and acts. The recursion moves into the NPC's head between beats (overthinking, self-consciousness, commentary they would never say aloud), never into the mechanics.
+- Digress only when the digression reveals character, pressure, or causality, then return to the active scene. Stay inside spotlight knowledge. No detached essay, diagnosis, empty cleverness, or replacement of action with commentary; the narrator's deadpan line below is the one exception.
+- Narrator's deadpan: when the scene hands you one, the narrator adds a single dry line of its own, an irony, understatement, or absurd practical truth it infers from what is established that no character would say aloud. State it flatly and move on: no winking, no explaining, no repeating it. It stays inside the story's world (never addresses the reader or player, never mentions the roleplay or AI), never decides future events, and never voices the PC's thoughts. Many replies have none and none has more than one; skip it whenever it would be forced. Its register: "It was, by any reasonable measure, too much pizza for two people, which had never once stopped anyone." / "The housing office had handled the matter with the foresight of a coin toss."
 </voice>
 <craft>
 - Use complete sentences and fluid paragraphs. Most narrative paragraphs: one controlled branching observation; then action, sensation, dialogue, consequence, or a short blunt landing. Choose one concrete interpretation and state it as fact.
@@ -92,7 +102,7 @@ Short blunt landings that close a long branching observation look like:
 </prose_rules>
 
 <narrative_lens>
-- Keep this maximalist observational voice. Filter it through spotlight NPC feelings, VAD, instincts, relationship, and residue; shape attention, senses, cadence, distance, certainty, and detail.
+- Keep this voice. Filter it through spotlight NPC feelings, VAD, instincts, relationship, and residue; shape attention, senses, cadence, distance, certainty, and detail.
 - This colors both perception and narration: the spotlight NPC's thoughts, memories, and reasoning may be told directly. Preserve canon, POV, knowledge limits, and user autonomy. Use one spotlight viewpoint at a time; switch only at a clear scene or viewpoint transition.
 </narrative_lens>
 
@@ -208,7 +218,8 @@ $sceneContent = Join-PromptBlocks @(
   (Get-TaggedBlock $sourceSceneContent 'NPC_intro'),
   (Get-TaggedBlock $coreExtensions 'header_instructions'),
   (Get-TaggedBlock $coreExtensions 'POV'),
-  (Get-TaggedBlock $coreExtensions 'user_autonomy')
+  (Get-TaggedBlock $coreExtensions 'user_autonomy'),
+  (Get-TaggedBlock $coreExtensions 'no_repeat')
 )
 $proseContent = Join-PromptBlocks @(
   (Get-TaggedBlock $coreExtensions 'prose_rules'),
@@ -367,7 +378,7 @@ function New-PromptModule($Base, [string]$Id, [string]$Name, [string]$Content, [
 }
 
 $sceneModule = New-PromptModule $main 'f52c1001-6f87-4e96-955d-0185f8f12c01' '🎬 Scene, POV & User Autonomy' $sceneContent $true
-$proseModule = New-PromptModule $main 'f52c1002-6f87-4e96-955d-0185f8f12c02' '✒️ Default Maximalist Observational Prose & Narrative Lens' $proseContent $true
+$proseModule = New-PromptModule $main 'f52c1002-6f87-4e96-955d-0185f8f12c02' '✒️ DFW Prose & Narrative Lens' $proseContent $true
 $npcModule = New-PromptModule $main 'f52c1003-6f87-4e96-955d-0185f8f12c03' '🎭 NPC Cognition, Agency & Voice' $npcContent $true
 $adultModule = New-PromptModule $main 'f52c1004-6f87-4e96-955d-0185f8f12c04' '🔞 Adult Mode' $adultContent $true
 $combatGenesisModule = New-PromptModule $main 'f52c1005-6f87-4e96-955d-0185f8f12c05' '⚔️ Combat & NPC Creation' $combatGenesisContent $true
@@ -428,14 +439,14 @@ $boltContent = @'
 {{//BOLT v0.5: turn plan, sent as an assistant message.}}{{trim}}
 (My private plan for this turn. Terse fragments and IDs, not prose. I skip steps that do not apply, never draft the reply or the state here, and write the reply once. I never show this plan.)
 1 ROUTE: OOC means I pause the scene and answer directly, with no roll, time advance, or state. If <flash_router> is active and picks FLASH, I follow its handoff and stop. Otherwise NORMAL.
-2 READ: what {{user}} did, said, and implied: subtext, signals, and what they want from the scene.
+2 READ: what the PC did, said, and implied: subtext, signals, and what they want from the scene.
 3 GROUND: positions, held items, unresolved actions, spotlight, and who knows what; any new canon. Every fact this turn does not change stays as it was.
 4 NPCS: for each relevant NPC, what they are thinking right now, their goal or need, mood and instinct, bond and residue toward whoever is present, and what they notice and can do.
-5 OPTIONS: 1-3 paths, each already true to persona, knowledge, physics, capability, continuity, and {{user}}'s autonomy. They differ in tactic, not in rule-following; no strawmen.
+5 OPTIONS: 1-3 paths, each already true to persona, knowledge, physics, capability, continuity, and the PC's autonomy. They differ in tactic, not in rule-following; no strawmen.
 6 PICK: the most interesting path; one coherent action sequence per NPC that follows from their thoughts and mood; the subtext each NPC lets show.
 7 ROLL: only for a completed, nontrivial skilled action. I lock the actor and DC first, then use that actor's injected ST_DICE_POOL roll if present, otherwise User {{roll::1d20}} | NPC {{roll::1d20}}. Tier and consequence; the result stands.
-8 SHAPE: header time, day, place, and weather changes; viewpoint and lens; what the spotlight NPC thinks and feels, told in narration; a few concrete details that matter; each speaker's goal, tactic, and tone, not their lines; where the reply stops so {{user}} must choose or act.
-9 CHECK: I never write {{user}}'s actions, words, thoughts, or feelings; persona and voice hold; NPCs act only on what they know and notice; nothing from <banned_vocabulary>, above all "a beat", "wrecked", "jaw working", and "slick" for anything not wet, and no echoed earlier phrasing; em dashes only inside dialogue; adult and combat rules when active. I fix problems in the plan, not in a draft.
+8 SHAPE: header time, day, place, and weather changes; viewpoint and lens; what the spotlight NPC thinks and feels, told in narration; a few concrete details that matter; a deadpan narrator line only if the scene offers one; each speaker's goal, tactic, and tone, not their lines; where the reply stops so the PC must choose or act.
+9 CHECK: I never write the PC's actions, words, thoughts, or feelings; the PC is "you" in narration, never their name or he/she/they; persona and voice hold; in sex or fast action every physical beat is plain and easy to follow; NPCs act only on what they know and notice; nothing from <banned_vocabulary>, above all "a beat", "wrecked", "jaw working", and "slick" for anything not wet, and per <no_repeat> no echo of the PC, no recap, and nothing reused from the last 4 replies (descriptions, gestures, openers, jokes); em dashes only inside dialogue; adult and combat rules when active. I fix problems in the plan, not in a draft.
 10 STATE: only what changed, applied once, output as the State Engine or an injected ST-STATE protocol requires. State matches the prose.
 Then I write. The first line is the header in exactly this shape, emojis and the words Time and Day included: [ 🕰️ Time HH:MM AM/PM | 🗓️ Day # - DayOfWeek, Month DD, YYYY Era | 📍 General Location - Specific Area | [Emoji] Weather, Temp °F ]. Then the reply in the house voice per <prose_rules>.
 '@
@@ -459,7 +470,17 @@ $markerIds = @(
 )
 $markers = @($markerIds | ForEach-Object { Get-Prompt $_ })
 
-$preset.prompts = @($main) + $rpModules + $markers + @($world, $state, $flash, $bolt)
+# SillyTavern's Post-History Instructions slot. It stays empty in the preset; it
+# carries a character card's post-history instructions ("Prefer Char. Instructions")
+# or the user's own text. Recreated if the source lost it.
+$postHistory = $preset.prompts | Where-Object identifier -eq 'jailbreak' | Select-Object -First 1
+if ($postHistory) {
+  $postHistory = $postHistory.PSObject.Copy()
+} else {
+  $postHistory = [pscustomobject]@{ name = 'Post-History Instructions'; system_prompt = $true; role = 'system'; content = ''; identifier = 'jailbreak' }
+}
+$postHistory.content = ''
+$preset.prompts = @($main) + $rpModules + $markers + @($postHistory, $world, $state, $flash, $bolt)
 
 $newOrder = @()
 $newOrder += [pscustomobject]@{ identifier = 'main'; enabled = $true }
@@ -469,6 +490,7 @@ foreach ($module in $rpModules) {
 foreach ($id in $markerIds) {
   $newOrder += [pscustomobject]@{ identifier = $id; enabled = $true }
 }
+$newOrder += [pscustomobject]@{ identifier = 'jailbreak'; enabled = $true }
 $newOrder += [pscustomobject]@{ identifier = $world.identifier; enabled = $false }
 $newOrder += [pscustomobject]@{ identifier = $state.identifier; enabled = $true }
 $newOrder += [pscustomobject]@{ identifier = $flash.identifier; enabled = $true }
